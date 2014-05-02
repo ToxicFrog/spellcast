@@ -4,6 +4,26 @@
 ;; This actually lists the spells in *reverse* order, since that's the
 ;; easiest way to test suffixes
 
+(defmacro defspell
+  [name gestures & rest]
+  `(def ^:private ~name ~(reverse gestures)))
+
+(defmacro defspells
+  [name & spells]
+  (defn make-spell [name gestures desc]
+    (let [gestures (vec (map keyword gestures))]
+         [gestures [(keyword name) desc]]))
+  (let [spells (mapcat #(apply make-spell %) spells)]
+    `(def ^:private ~name ~(apply hash-map spells))))
+
+(defspells classic
+  (lightning-bolt-2 [w d d c]
+    "Strikes one target with lightning.")
+  (time-stop        [s p p c]
+    "Stops time for everyone else for one turn."))
+
+(println classic)
+
 (def ^:private rev-spells {[:c :d :d :w] :lightning-bolt-2
                            [:c :f :f :f :s :d] :disease
                            [:c :p :p :s] :time-stop
@@ -77,8 +97,26 @@
   (vector (into [] (one-hand-sequence (hand-seq left right)))
           (into [] (one-hand-sequence (hand-seq right left)))))
 
+(defn make-player [left right]
+  {:gestures [left right]})
+
+(defn get-gestures [game]
+  (into game
+        {:players [(make-player [:w :f :p :s :f :w] [:stab :c :w :d :s :f])
+                   (make-player [:s :p :p :c] [:w :d :d :c])
+                   (make-player [:c :w] [:c :w])]}))
+
+(defn execute [game]
+  (->> game :players
+      (map #(->> % :gestures (apply available-spells) println))
+      dorun))
+
+(defn do-turn [game]
+  ; get all gestures for all players
+  (-> game
+      get-gestures
+      execute))
+
 (defn -main
   [& args]
-  (println (available-spells [:w :f :p :s :f :w] [:stab :c :w :d :s :f]))
-  (println (available-spells [:s :p :p :c] [:w :d :d :c]))
-  (println (available-spells [:c :w] [:c :w])))
+  (println (do-turn {})))
