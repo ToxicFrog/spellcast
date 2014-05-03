@@ -1,5 +1,6 @@
 (ns spellcast.core
     (:gen-class))
+(require '[clojure.core.async :as async :refer [<! >! <!! >!! chan pub sub]])
 
 ;; This actually lists the spells in *reverse* order, since that's the
 ;; easiest way to test suffixes
@@ -22,7 +23,7 @@
   (time-stop        [s p p c]
     "Stops time for everyone else for one turn."))
 
-(println classic)
+;(println classic)
 
 (def ^:private rev-spells {[:c :d :d :w] :lightning-bolt-2
                            [:c :f :f :f :s :d] :disease
@@ -97,26 +98,71 @@
   (vector (into [] (one-hand-sequence (hand-seq left right)))
           (into [] (one-hand-sequence (hand-seq right left)))))
 
-(defn make-player [left right]
-  {:gestures [left right]})
+(defn record-gestures [player left right]
+  (merge-with conj player {:left left :right right}))
 
-(defn get-gestures [game]
-  (into game
-        {:players [(make-player [:w :f :p :s :f :w] [:stab :c :w :d :s :f])
-                   (make-player [:s :p :p :c] [:w :d :d :c])
-                   (make-player [:c :w] [:c :w])]}))
+(defn- get-gestures [game]
+  ; wait for gesture messages from all clients, then drop the listener
+  ; and insert them into the game
+  (assoc game :players
+    (->> (:players game)
+         (map #(record-gestures % :f :f)))))
 
-(defn execute [game]
-  (->> game :players
-      (map #(->> % :gestures (apply available-spells) println))
-      dorun))
+(defn- ask-questions [game]
+  game)
 
-(defn do-turn [game]
-  ; get all gestures for all players
+(defn- execute-turn [game]
+  (doseq [p (game :players)]
+    (prn (:name p) (available-spells (:left p) (:right p))))
+  game)
+
+(defn- run-turn [game]
+  (prn "Starting turn" (:turn game))
   (-> game
+      (update-in [:turn] inc)
       get-gestures
-      execute))
+      ask-questions
+      execute-turn
+      ))
+
+(defn- all [p xs]
+  (not (some #(not (p %)) xs)))
+
+(defn- game-finished? [game]
+  (< 3 (:turn game)))
+
+(defn new-player [name]
+  {:name name :left '() :right '()})
+
+(defn- init-game
+  "Perform game startup tasks like collecting players."
+  [game]
+  (into game
+        {:players (->> (range 0 (:min-players game)) (map #(str "player_" %)) (map new-player))
+         :spectators []
+         :turn 0
+         }))
+
+(defn report-end [game]
+  (prn "Finished:" game))
+
+(defn- run-game [game]
+  (loop [game (init-game game)]
+    (if (game-finished? game)
+      (report-end game)
+      (recur (run-turn game)))))
+
+(def topic identity)
+
+(defn- new-game
+  "Return a new Spellcast game state."
+  [& {:as init}]
+  (let [ch (chan)
+        pubsub (pub ch topic)]
+    (into init {:ch ch
+                :pubsub pubsub
+                })))
 
 (defn -main
   [& args]
-  (println (do-turn {})))
+  (run-game (new-game :min-players 2 :max-players 2 :spectators false)))
