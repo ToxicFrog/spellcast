@@ -1,6 +1,7 @@
 (ns spellcast.core (:gen-class))
-(require '[clojure.core.async :as async :refer [<! >! <!! >!! chan pub sub]])
+(require '[clojure.core.async :as async :refer [<! >! <!! >!! chan pub sub go-loop]])
 (require '[spellcast.spells :refer [available-spells]])
+(require '[spellcast.net :refer :all])
 
 (defn record-gestures [player left right]
   (merge-with conj player {:left left :right right}))
@@ -33,7 +34,7 @@
   (not (some #(not (p %)) xs)))
 
 (defn- game-finished? [game]
-  (< 3 (:turn game)))
+  (< 0 (:turn game)))
 
 (defn new-player [name]
   {:name name :left '() :right '()})
@@ -51,10 +52,22 @@
   (prn "Finished:" game))
 
 (defn- run-game [game]
-  (loop [game (init-game game)]
-    (if (game-finished? game)
-      (report-end game)
-      (recur (run-turn game)))))
+  (let [[ch sock] (listen-socket 8666)
+        client-ch (chan)]
+    (go-loop [client (<! ch)]
+             (if client
+               (do
+                 (prn client)
+                 (>! client-ch (str "client:" client))
+                 (close-client client)
+                 (recur (<! ch)))))
+    (loop [game (init-game game)]
+      (prn "waiting for client")
+      (prn (<!! client-ch))
+      (if (game-finished? game)
+        (report-end game)
+        (recur (run-turn game))))
+    (.close sock)))
 
 (def topic identity)
 
