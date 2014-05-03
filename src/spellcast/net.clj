@@ -1,7 +1,8 @@
 (ns spellcast.net)
 (require '[clojure.core.async :as async :refer [<! <!! >! >!! thread close! chan]]
          '[clojure.java.io :refer [reader writer]])
-(import '[java.net ServerSocket])
+(import '[java.net ServerSocket]
+        '[java.io PrintWriter])
 
 (defn socket-reader [sock]
   (let [ch (chan 8)]
@@ -10,20 +11,25 @@
       (try
         (doseq [line (-> sock reader line-seq)]
           (>!! ch line))
-        (catch Exception e nil))
+        (catch Exception e
+          (println "Exception in socket reader: " e)))
       (println "Reader for " sock " exiting"))
     ch))
 
 (defn socket-writer [sock]
-  (let [writer (-> sock writer)
+  (let [writer (-> sock writer (PrintWriter. true))
         ch (chan 8)]
     (thread
       (println "Writer for " sock " online")
-      (doseq [msg (take-while identity (repeatedly #(<!! ch)))]
-        (println "Got message for " sock)
-        (.println sock msg))
-      (println "Closing " sock)
-      (.close sock))
+      (try
+        (doseq [msg (take-while identity (repeatedly #(<!! ch)))]
+          (println "Got message for " sock ": " msg)
+          (.println writer msg))
+        (catch Exception e
+          (println "Exception in socket writer: " e))
+        (finally
+          (println "Closing " sock)
+          (.close sock))))
     ch))
 
 (defn close-client [client]

@@ -58,7 +58,8 @@
              (if client
                (do
                  (prn client)
-                 (>! client-ch (str "client:" client))
+                 (>! (:to client) (<! (:from client)))
+                 (>! client-ch true)
                  (close-client client)
                  (recur (<! ch)))))
     (loop [game (init-game game)]
