@@ -7,10 +7,12 @@
        (try
          ~@(butlast body)
          (catch Throwable e#
-           (log/errorf e# "Uncaught exception in thread " ~name))
+           (log/errorf e# "Uncaught exception in thread " ~name)
+           (System/exit 1))
          ~(last body)))
     `(async/thread
        (try
          ~@body
          (catch Throwable e#
-           (log/errorf e# "Uncaught exception in thread " ~name))))))
+           (log/errorf e# "Uncaught exception in thread " ~name)
+           (System/exit 1))))))
