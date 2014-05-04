@@ -6,6 +6,7 @@
 
 (defn -main
   [& args]
+  (log/set-level! :info)
   (log/infof "Spellcast starting up.")
   (-> (new-game :min-players 2 :max-players 2 :allow-spectators false)
       (net/listen-socket 8666)

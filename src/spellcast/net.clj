@@ -7,7 +7,7 @@
 (import '[java.net ServerSocket SocketException]
         '[java.io PrintWriter PushbackReader])
 
-(defn socket-reader [id sock ch]
+(defn socket-reader [id sock in out]
   (let [reader (-> sock reader PushbackReader.)]
     (try-thread
       (str "socket reader " id)
@@ -15,15 +15,15 @@
       (doseq [msg (repeatedly #(edn/read reader))]
         (assert (map? msg))
         (log/debugf "[%d] >> %s" id (pr-str msg))
-        (>!! ch (assoc msg :from id)))
+        (>!! in (assoc msg :from id))
+        (log/debugf "[%d] => %s" id (pr-str msg)))
       (catch SocketException e
         (log/infof "[%d] Connection error." id))
       (finally
-        (>!! ch {:tag id :close true})
-        (log/debugf "[%d] Reader exiting." id)))
-    ch))
+        (>!! out {:tag id :close true})
+        (log/debugf "[%d] Reader exiting." id)))))
 
-(defn socket-writer [id sock outbus]
+(defn socket-writer [id sock in outbus]
   (let [writer (-> sock writer (PrintWriter. true))
         ch (chan)]
     (sub outbus id ch)
@@ -31,19 +31,16 @@
     (try-thread
       (str "socket writer " id)
       (log/debugf "[%d] Writer active." id)
-      (doseq [msg (->> (repeatedly #(<!! ch)) (take-while #(not (:close %))))]
+      (doseq [msg (->> (repeatedly #(<!! ch))
+                       (take-while #(not (:close %))))]
         (log/debugf "[%d] << %s" id (str msg))
         (.println writer (pr-str (dissoc msg :tag))))
       (catch SocketException e
         (log/infof "[%d] Connection error." id))
       (finally
         (log/infof "[%d] Client disconnecting." id)
+        (>!! in {:tag :disconnect :from id})
         (.close sock)))))
-
-(defn close-client [client]
-  (close! (:from client))
-  (close! (:to client))
-  {:sock (:sock client)})
 
 (defn listen-socket
   "Create a listen socket and accept connections on it. Returns [channel socket].
@@ -63,9 +60,10 @@
       (loop [id 0]
         (log/debugf "Waiting for client %d" id)
         (if (not (.isClosed sock))
-          (let [client (.accept sock)
-                to (socket-writer id client (:out-bus game))
-                from (socket-reader id client (:in game))]
+          (let [client (.accept sock)]
+            (socket-writer id client (:in game) (:out-bus game))
+            (socket-reader id client (:in game) (:out game))
             (log/infof "Accepted connection %d from %s" id (.getInetAddress client))
             (recur (inc id))))))
+    (log/debugf "Listener socket running.")
     (assoc game :socket sock)))

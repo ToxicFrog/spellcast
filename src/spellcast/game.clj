@@ -4,6 +4,26 @@
          '[spellcast.util :refer :all]
          '[taoensso.timbre :as log])
 
+(defmacro defstate [name & fns]
+  (let [unknown (fn [game msg]
+                  (log/warn "Unknown message type" msg)
+                  game)
+        as-fn (fn [f]
+                (cond
+                  (= 'defn (first f)) [(second f) (cons 'fn (drop 2 f))]
+                  (= 'def (first f)) [(second f) (nth f 2)]
+                  :else (throw (Exception. "Bad clause in defstate; only def/defn permitted"))))
+        fns (->> fns
+                 (map as-fn)
+                 (map (fn [f] [(first f) (second f)]))
+                 (into {}))]
+    `(def ~name
+       {:begin ~(get fns 'begin identity)
+        :end ~(get fns 'end identity)
+        :default ~(get fns 'default unknown)
+        :done? ~(get fns 'done?)
+        :handlers ~(into {} (filter (fn [[k v]] (keyword? k)) fns))})))
+
 (defn- record-gestures [player left right]
   (merge-with conj player {:left left :right right}))
 
@@ -71,7 +91,7 @@
                 (assoc-in [:players from] player)
                 (assoc-in [:players name] player)))))
 
-(defn- collect-players [{:keys [in-bus] :as game}]
+(defn- collect-players' [{:keys [in-bus] :as game}]
   (log/info "collect-players init" game)
   (let [ch (sub in-bus :login (chan))]
     (loop [game game]
@@ -82,16 +102,42 @@
           game)
         (recur (add-client game (<!! ch)))))))
 
+(defstate collect-players
+  (def done? enough-players?)
+  (defn begin [game]
+    (log/info "Collecting players...")
+    game)
+  (defn end [game]
+    (log/info "Got enough players!")
+    game)
+  (defn :login [game msg]
+    (add-client game msg)))
+
+(defn run-state [game state]
+  (log/debug "State runner init" game state)
+  (let [in (:in game)
+        {:keys [begin end done? handlers default]} state]
+    (loop [game (begin game)]
+      (log/debug "state iteration game=" game)
+      (if (done? game)
+        (end game)
+        (let [msg (<!! in)
+              handler (get handlers (:tag msg) default)]
+          (log/debug "log msg=" msg)
+          (recur (handler game msg)))))))
+
 (defn- init-game
   "Perform game startup tasks like collecting players."
   [game]
-  (collect-players game))
+  (log/debug "Initializing game...")
+  (run-state game collect-players))
 
 (defn- report-end [game]
   (prn "Finished:" game))
 
 (defn run-game [game]
-  (thread
+  (log/debug "Launching new gamerunner thread for" game)
+  (try-thread "gamerunner"
     (loop [game (init-game game)]
       (log/info "run-game" (:turn game))
       (if (game-finished? game)
@@ -101,11 +147,11 @@
 (defn new-game
   "Return a new Spellcast game state."
   [& {:as init}]
-  (let [in-ch (chan)
-        out-ch (chan)
-        in-bus (pub in-ch :tag)
-        out-bus (pub out-ch :tag)]
-    (assoc init :in in-ch :in-bus in-bus
-                :out out-ch :out-bus out-bus
+  (let [in (chan)
+        out (chan)
+        out-bus (pub out :tag)]
+    (assoc init :in in
+                :out out :out-bus out-bus
                 :players {}
                 :turn 0)))
+
