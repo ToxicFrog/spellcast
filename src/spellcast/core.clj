@@ -54,17 +54,20 @@
 (defn- run-game [game]
   (let [[ch sock] (listen-socket 8666)
         client-ch (chan)]
+    (<!!
     (go-loop [client (<! ch)]
              (if client
                (do
                  (prn client)
-                 (>! (:to client) (<! (:from client)))
-                 (>! client-ch true)
+                 (let [msg (<! (:from client))]
+                   (prn msg)
+                   (>! (:to client) msg)
+                   (prn "message echoed"))
                  (close-client client)
-                 (recur (<! ch)))))
+                 (recur (<! ch)))
+               (prn "listener died! eep!")))
+    )
     (loop [game (init-game game)]
-      (prn "waiting for client")
-      (prn (<!! client-ch))
       (if (game-finished? game)
         (report-end game)
         (recur (run-turn game))))
@@ -83,4 +86,4 @@
 
 (defn -main
   [& args]
-  (run-game (new-game :min-players 2 :max-players 2 :spectators false)))
+  (run-game (new-game :min-players 4 :max-players 4 :spectators false)))
