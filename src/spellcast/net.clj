@@ -68,7 +68,7 @@
   A background thread is created for the listener (and another two for each
   connection accepted). This thread exits when the socket is closed."
 
-  [port ch outbus]
+  [game port]
   (let [sock (ServerSocket. port)]
     (log/infof "Opening listen socket on port %d" port)
     (try-thread
@@ -77,8 +77,8 @@
         (log/debugf "Waiting for client %d" id)
         (if (not (.isClosed sock))
           (let [client (.accept sock)
-                to (socket-writer id client outbus)
-                from (socket-reader id client ch)]
+                to (socket-writer id client (:out-bus game))
+                from (socket-reader id client (:in game))]
             (log/infof "Accepted connection %d from %s" id (.getInetAddress client))
             (recur (inc id))))))
-    sock))
+    (assoc game :socket sock)))
