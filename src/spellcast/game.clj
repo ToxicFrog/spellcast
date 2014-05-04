@@ -62,7 +62,8 @@
      (:min-players game)))
 
 (defn- send-to [game user msg]
-  (>!! (:out game) (into msg {:tag user})))
+  (>!! (:out game) (into msg {:tag user}))
+  game)
 
 (defn- remove-player [game player]
   (update-in game [:players]
@@ -71,9 +72,14 @@
              (get-in game [:players player :name])))
 
 (defn- disconnect [game user msg]
-  (send-to game user {:error msg})
+  (log/infof "Disconnecting user %d: %s" user msg)
+  (send-to game user {:tag :error :msg msg})
   (send-to game user {:close true})
   (remove-player game user))
+
+(defn- get-player [game key]
+  (or ((:players game) key)
+      (some #(= key (:name %)) (:players game))))
 
 (defn- add-client [game {:keys [name pass from]}]
   ; reject if:
@@ -81,26 +87,16 @@
   ; game at player limit
   ; password required and wrong/no password provided
   (cond
-    (-> game :players (contains? name)) (disconnect game from "A player with that name already exists.")
+    (get-player game from) (send-to game from {:msg "You are already logged in."})
+    (get-player game name) (disconnect game from "A player with that name already exists.")
     (>= (count (:players game))
         (:max-players game)) (disconnect game from "Player limit reached.")
     (and (:password game)
          (not= pass (:pass game))) (disconnect game from "Password incorrect.")
     :else (let [player {:name name :id from}]
+            (send-to game :all {:msg (str name " has joined the game.")})
             (-> game
-                (assoc-in [:players from] player)
-                (assoc-in [:players name] player)))))
-
-(defn- collect-players' [{:keys [in-bus] :as game}]
-  (log/info "collect-players init" game)
-  (let [ch (sub in-bus :login (chan))]
-    (loop [game game]
-      (log/info "collect-players loop" game)
-      (if (enough-players? game)
-        (do
-          (close! ch)
-          game)
-        (recur (add-client game (<!! ch)))))))
+                (assoc-in [:players from] player)))))
 
 (defstate collect-players
   (def done? enough-players?)
@@ -110,8 +106,12 @@
   (defn end [game]
     (log/info "Got enough players!")
     game)
-  (defn :login [game msg]
-    (add-client game msg)))
+  (defn :login [game {:keys [from name] :as msg}]
+    (if (string? name)
+      (add-client game msg)
+      (send-to game from {:msg "Malformed login request."})))
+  (defn :disconnect [game msg]
+    (remove-player game (:from msg))))
 
 (defn run-state [game state]
   (log/debug "State runner init" game state)
