@@ -1,24 +1,11 @@
 (ns spellcast.net)
-(require '[clojure.core.async :as async :refer [<! <!! >! >!! close! chan sub]]
+(require '[spellcast.util :refer :all]
+         '[clojure.core.async :as async :refer [<! <!! >! >!! close! chan sub]]
          '[clojure.java.io :refer [reader writer]]
          '[clojure.edn :as edn]
          '[taoensso.timbre :as log])
 (import '[java.net ServerSocket SocketException]
         '[java.io PrintWriter PushbackReader])
-
-(defmacro try-thread [name & body]
-  (if (->> body last first (= 'finally))
-    `(async/thread
-       (try
-         ~@(butlast body)
-         (catch Throwable e#
-           (log/errorf e# "Uncaught exception in thread " ~name))
-         ~(last body)))
-    `(async/thread
-       (try
-         ~@body
-         (catch Throwable e#
-           (log/errorf e# "Uncaught exception in thread " ~name))))))
 
 (defn socket-reader [id sock ch]
   (let [reader (-> sock reader PushbackReader.)]

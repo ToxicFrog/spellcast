@@ -1,6 +1,7 @@
 (ns spellcast.game (:gen-class))
 (require '[clojure.core.async :as async :refer [<! >! <!! >!! chan pub sub go close! thread]]
          '[spellcast.spells :refer [available-spells]]
+         '[spellcast.util :refer :all]
          '[taoensso.timbre :as log])
 
 (defn- record-gestures [player left right]
@@ -29,9 +30,6 @@
       ask-questions
       execute-turn
       ))
-
-(defn- all [p xs]
-  (not (some #(not (p %)) xs)))
 
 (defn- game-finished? [game]
   (< 0 (:turn game)))
