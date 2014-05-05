@@ -64,6 +64,8 @@
             (socket-writer id client (:in game) (:out-bus game))
             (socket-reader id client (:in game) (:out game))
             (log/infof "Accepted connection %d from %s" id (.getInetAddress client))
-            (recur (inc id))))))
+            (recur (inc id)))))
+      (catch SocketException e
+        (log/info "Listen socket closed.")))
     (log/debugf "Listener socket running.")
     (assoc game :socket sock)))

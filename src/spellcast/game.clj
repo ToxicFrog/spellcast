@@ -52,14 +52,10 @@
       ))
 
 (defn- game-finished? [game]
-  (< 0 (:turn game)))
+  true)
 
 (defn new-player [name]
   {:name name :left '() :right '()})
-
-(defn- enough-players? [game]
-  (> (count (:players game))
-     (:min-players game)))
 
 (defn- send-to [game user msg]
   (>!! (:out game) (into msg {:tag user}))
@@ -99,7 +95,10 @@
                 (assoc-in [:players from] player)))))
 
 (defstate collect-players
-  (def done? enough-players?)
+  (defn done? [game]
+    (and
+      (>= (count (:players game)) (:min-players game))
+      (every? :ready (vals (:players game)))))
   (defn begin [game]
     (log/info "Collecting players...")
     game)
@@ -110,6 +109,9 @@
     (if (string? name)
       (add-client game msg)
       (send-to game from {:msg "Malformed login request."})))
+  (defn :ready [game {:keys [from ready] :as msg}]
+    (send-to game :all {:msg (str from " ready: " ready)})
+    (assoc-in game [:players from :ready] ready))
   (defn :disconnect [game msg]
     (remove-player game (:from msg))))
 
@@ -133,16 +135,18 @@
   (run-state game collect-players))
 
 (defn- report-end [game]
+  (send-to game :all {:msg "Finished!"})
+  (send-to game :all {:close true})
   (prn "Finished:" game))
 
 (defn run-game [game]
   (log/debug "Launching new gamerunner thread for" game)
   (try-thread "gamerunner"
     (loop [game (init-game game)]
-      (log/info "run-game" (:turn game))
       (if (game-finished? game)
         (report-end game)
-        (recur (run-turn game))))))
+        (recur (run-turn game))))
+    (.close (:socket game))))
 
 (defn new-game
   "Return a new Spellcast game state."
