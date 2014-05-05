@@ -16,3 +16,14 @@
          (catch Throwable e#
            (log/errorf e# "Uncaught exception in thread " ~name)
            (System/exit 1))))))
+
+(defn mapv
+  "Map (function) over the values of a map (data structure). Keys are unchanged."
+  [f m]
+  (into {} (for [[k v] m] [k (f v)])))
+
+(defn get-meta [obj key]
+  ((meta obj) key))
+
+(defn message [id payload]
+  (with-meta payload {:id id}))
