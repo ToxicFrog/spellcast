@@ -75,7 +75,7 @@
 
 (defn- get-player [game key]
   (or ((:players game) key)
-      (some #(= key (:name %)) (:players game))))
+      (some #(= key (:name %)) (-> game :players vals))))
 
 (defn- add-client [game id name]
   ; reject if:
@@ -110,8 +110,10 @@
       (add-client game id name)
       (send-to game id (list :error "Malformed login request."))))
   (defn :ready [game id ready]
-    (send-to game :all (list :info (str id " ready: " ready)))
-    (assoc-in game [:players id :ready] ready))
+    (if (get-player game id)
+      (do (send-to game :all (list :info (str id " ready: " ready)))
+        (assoc-in game [:players id :ready] ready))
+      (send-to game id (list :error "You are not logged in."))))
   (defn :disconnect [game id]
     (remove-player game id)))
 
