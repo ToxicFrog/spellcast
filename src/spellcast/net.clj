@@ -1,6 +1,6 @@
 (ns spellcast.net)
 (require '[spellcast.util :refer :all]
-         '[clojure.core.async :as async :refer [<! <!! >! >!! close! chan sub]]
+         '[clojure.core.async :as async :refer [<! <!! >! >!! close! chan sub unsub]]
          '[clojure.java.io :refer [reader writer]]
          '[clojure.edn :as edn]
          '[taoensso.timbre :as log])
@@ -36,13 +36,18 @@
       (doseq [msg (->> (repeatedly #(<!! ch))
                        (take-while #(not= :close (first %))))]
         (log/debugf "[%d] << %s" id (str msg))
-        (.println writer (pr-str msg)))
+        (.println writer (pr-str msg))
+        (log/debugf "[%d] <= %s" id (str msg)))
       (catch SocketException e
         (log/infof "[%d] Connection error." id))
       (finally
         (log/infof "[%d] Client disconnecting." id)
+        (unsub outbus id ch)
+        (unsub outbus :all ch)
+        (close! ch)
         (>!! in (message id '(disconnect)))
-        (.close sock)))))
+        (.close sock)
+        (log/debugf "[%d] Disconnect completed." id)))))
 
 (defn listen-socket
   "Create a listen socket and accept connections on it. Returns [channel socket].
