@@ -16,9 +16,9 @@
         ; incoming messages are EDN lists with the format '(tag & args)
         ; we annotate them with their origin
         (assert (list? msg) "Malformed message from client.")
-        (log/debugf "[%d] >> %s" id (pr-str msg))
+        (log/tracef "[%d] >> %s" id (pr-str msg))
         (>!! in (with-meta msg {:id id}))
-        (log/debugf "[%d] => %s" id (pr-str msg)))
+        (log/tracef "[%d] => %s" id (pr-str msg)))
       (catch SocketException e
         (log/infof "[%d] Connection error." id))
       (finally
@@ -35,9 +35,10 @@
       (log/debugf "[%d] Writer active." id)
       (doseq [msg (->> (repeatedly #(<!! ch))
                        (take-while #(not= :close (first %))))]
-        (log/debugf "[%d] << %s" id (str msg))
-        (.println writer (pr-str msg))
-        (log/debugf "[%d] <= %s" id (str msg)))
+        (log/tracef "[%d] << %s" id (str msg))
+        (if (nil? (some-> msg meta :exclude id))
+          (.println writer (pr-str msg)))
+        (log/tracef "[%d] <= %s" id (str msg)))
       (catch SocketException e
         (log/infof "[%d] Connection error." id))
       (finally

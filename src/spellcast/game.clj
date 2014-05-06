@@ -8,8 +8,8 @@
 (def ^:dynamic *game-in* nil)
 
 (defmacro defstate [name & fns]
-  (let [unknown (fn [game msg]
-                  (log/warn "Unknown message type" msg)
+  (let [unknown (fn [game & rest]
+                  (log/warn "Unknown message type" rest)
                   game)
         as-fn (fn [f]
                 (cond
@@ -60,8 +60,12 @@
   {:name name :left '() :right '()})
 
 (defn- send-to [id msg]
-  (log/debug *game-out* id msg)
+  (log/debug "SEND-TO" id msg)
   (>!! *game-out* (with-meta msg {:id id})))
+
+(defn- send-except [id msg]
+  (log/debug "SEND-XC" id msg)
+  (>!! *game-out* (with-meta msg {:id :all :exclude #{id}})))
 
 (defn- remove-player [game player]
   (update-in game [:players]
@@ -97,6 +101,10 @@
             (-> game
                 (assoc-in [:players id] player)))))
 
+(defn- chat [game id msg]
+  (send-to :all (list :chat id msg))
+  game)
+
 (defstate collect-players
   (defn done? [game]
     (and
@@ -108,6 +116,7 @@
   (defn end [game]
     (log/info "Got enough players!")
     game)
+  (def :chat chat)
   (defn :login [game id name]
     (if (string? name)
       (add-client game id name)
@@ -129,9 +138,13 @@
       (if (done? game)
         (end game)
         (let [msg (<!! in)
-              handler (get handlers (keyword (first msg)) default)]
+              tag (keyword (first msg))
+              handler (get handlers tag)
+              args (cons (get-meta msg :id) (rest msg))]
           (log/debug "run-state handling message" (meta msg) msg)
-          (recur (apply handler game (get-meta msg :id) (rest msg))))))))
+          (if handler
+            (recur (apply handler game args))
+            (recur (apply default game tag args))))))))
 
 (defn- init-game
   "Perform game startup tasks like collecting players."
