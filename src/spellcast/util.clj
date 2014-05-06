@@ -1,5 +1,6 @@
 (ns spellcast.util)
-(require '[clojure.core.async :as async])
+(require '[clojure.core.async :as async]
+         '[taoensso.timbre :as log])
 
 (defmacro try-thread [name & body]
   (if (and (list? (last body)) (->> body last first (= 'finally)))
@@ -27,3 +28,7 @@
 
 (defn message [id payload]
   (with-meta payload {:id id}))
+
+(defn thread-call' [f & args]
+  (try-thread (str f)
+    (apply f args)))

@@ -152,12 +152,10 @@
   game)
 
 (defn run-game [game]
-  (log/debug "Launching new gamerunner thread for" game)
-  (try-thread "gamerunner"
-    (loop [game (init-game game)]
-      (if (game-finished? game)
-        (report-end game)
-        (recur (run-turn game))))))
+  (loop [game (init-game game)]
+    (if (game-finished? game)
+      (report-end game)
+      (recur (run-turn game)))))
 
 (defn new-game
   "Return a new Spellcast game state."
