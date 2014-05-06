@@ -4,6 +4,8 @@
          '[spellcast.util :refer :all]
          '[taoensso.timbre :as log])
 
+(def ^:dynamic *game* nil)
+
 (defmacro defstate [name & fns]
   (let [unknown (fn [game msg]
                   (log/warn "Unknown message type" msg)
@@ -39,11 +41,11 @@
 
 (defn- execute-turn [game]
   (doseq [p (game :players)]
-    (prn (:name p) (available-spells (:left p) (:right p))))
+    (log/debug (:name p) (available-spells (:left p) (:right p))))
   game)
 
 (defn- run-turn [game]
-  (prn "Starting turn" (:turn game))
+  (log/info "Starting turn" (:turn game))
   (-> game
       (update-in [:turn] inc)
       get-gestures
@@ -90,6 +92,7 @@
     (and (:password game)
          (not= nil (:pass game))) (disconnect game id "Password incorrect.")
     :else (let [player {:name name :id id}]
+            (log/info "Player" id "logged in as" name)
             (send-to game :all (list :info (str name " has joined the game.")))
             (-> game
                 (assoc-in [:players id] player)))))
@@ -117,18 +120,22 @@
   (defn :disconnect [game id]
     (remove-player game id)))
 
+(defn- with-game [game f & args]
+  (binding [*game* game]
+    (apply f game args)))
+
 (defn run-state [game state]
   (log/debug "State runner init" game state)
   (let [in (:in game)
         {:keys [begin end done? handlers default]} state]
-    (loop [game (begin game)]
+    (loop [game (with-game game begin)]
       (log/debug "state iteration game=" game)
-      (if (done? game)
-        (end game)
+      (if (with-game game done?)
+        (with-game game end)
         (let [msg (<!! in)
               handler (get handlers (keyword (first msg)) default)]
           (log/debug "run-state handling message" (meta msg) msg)
-          (recur (apply handler game (get-meta msg :id) (rest msg))))))))
+          (recur (apply with-game game handler (get-meta msg :id) (rest msg))))))))
 
 (defn- init-game
   "Perform game startup tasks like collecting players."
@@ -137,10 +144,12 @@
   (run-state game collect-players))
 
 (defn- report-end [game]
+  (log/info "Game over!")
+  (log/debug "Final game state:" game)
   (send-to game :all (list :info "Finished!"))
   (send-to game :all '(:close))
   (close! (:in game))
-  (prn "Finished:" game))
+  game)
 
 (defn run-game [game]
   (log/debug "Launching new gamerunner thread for" game)
@@ -148,8 +157,7 @@
     (loop [game (init-game game)]
       (if (game-finished? game)
         (report-end game)
-        (recur (run-turn game))))
-    (.close (:socket game))))
+        (recur (run-turn game))))))
 
 (defn new-game
   "Return a new Spellcast game state."

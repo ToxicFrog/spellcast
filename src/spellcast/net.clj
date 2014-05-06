@@ -75,4 +75,4 @@
       (catch SocketException e
         (log/info "Listen socket closed.")))
     (log/debugf "Listener socket running.")
-    (assoc game :socket sock)))
+    sock))

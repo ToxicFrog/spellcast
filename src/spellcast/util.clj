@@ -2,7 +2,7 @@
 (require '[clojure.core.async :as async])
 
 (defmacro try-thread [name & body]
-  (if (->> body last first (= 'finally))
+  (if (and (list? (last body)) (->> body last first (= 'finally)))
     `(async/thread
        (try
          ~@(butlast body)
