@@ -70,8 +70,7 @@
 (defn- remove-player [game player]
   (update-in game [:players]
              dissoc
-             (get-in game [:players player :id])
-             (get-in game [:players player :name])))
+             (get-in game [:players player :id])))
 
 (defn- disconnect [game user msg]
   (log/infof "Disconnecting user %d: %s" user msg)
@@ -105,11 +104,17 @@
   (send-to :all (list :chat id msg))
   game)
 
+(defn- everyone-ready? [game]
+  (every? :ready (vals (:players game))))
+
+(defn- unready-all [game]
+  (update-in game [:players] mapv #(assoc % :ready false)))
+
 (defstate collect-players
   (defn done? [game]
     (and
       (>= (count (:players game)) (:min-players game))
-      (every? :ready (vals (:players game)))))
+      (everyone-ready? game)))
   (defn begin [game]
     (log/info "Collecting players...")
     game)
