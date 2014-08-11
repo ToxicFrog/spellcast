@@ -1,5 +1,6 @@
 (ns spellcast.game (:gen-class))
 (require '[clojure.core.async :as async :refer [<! >! <!! >!! chan go pub close! thread]]
+         '[clojure.algo.generic.functor :refer [fmap]]
          '[spellcast.spells :refer [available-spells]]
          '[spellcast.util :refer :all]
          '[spellcast.game.common :refer :all]
@@ -42,7 +43,7 @@
   (every? :ready (vals (:players game))))
 
 (defn- unready-all [game]
-  (update-in game [:players] mapv #(assoc % :ready false)))
+  (update-in game [:players] fmap #(assoc % :ready false)))
 
 (defn- init-game
   "Perform game startup tasks like collecting players."

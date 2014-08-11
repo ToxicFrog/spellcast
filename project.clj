@@ -2,6 +2,7 @@
   :description "A Clojure implementation of the Bartle/Plotkin classic"
   :url "https://github.com/toxicfrog/spellcast"
   :dependencies [[org.clojure/clojure "1.6.0"]
+                 [org.clojure/algo.generic "0.1.2"]
                  [org.clojure/core.typed "0.2.44"]
                  [org.clojure/core.async "0.1.301.0-deb34a-alpha"]
                  [com.taoensso/timbre "3.1.6"]]
