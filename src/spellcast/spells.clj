@@ -93,6 +93,5 @@
        main other))
 
 (defn available-spells [left right]
-  (vector (into [] (one-hand-sequence (hand-seq left right)))
-          (into [] (one-hand-sequence (hand-seq right left)))))
-
+  {:left (into [] (one-hand-sequence (hand-seq left right)))
+   :right (into [] (one-hand-sequence (hand-seq right left)))})

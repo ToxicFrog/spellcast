@@ -7,43 +7,41 @@
          '[spellcast.game.collect-players :refer :all]
          '[taoensso.timbre :as log])
 
+(defn- update-players [game f & args]
+  (assoc game :players
+    (fmap #(apply f % args) (:players game))))
+
 (defn- record-gestures [player left right]
   (merge-with conj player {:left left :right right}))
 
 (defn- get-gestures [game]
   ; wait for gesture messages from all clients, then drop the listener
   ; and insert them into the game
-  (assoc game :players
-    (->> (:players game)
-         (map #(record-gestures % :f :f)))))
+  (update-players game record-gestures :f :p))
 
 (defn- ask-questions [game]
   game)
 
 (defn- execute-turn [game]
-  (doseq [p (game :players)]
-    (log/debug (:name p) (available-spells (:left p) (:right p))))
+  (log/debug "execute-turn" game)
+  (doseq [[id player] (game :players)]
+    (log/debug (:name player) (available-spells (:left player) (:right player))))
   game)
+
+(defn- unready-all [game]
+  (update-players game assoc :ready false))
 
 (defn- run-turn [game]
   (log/info "Starting turn" (:turn game))
   (-> game
       (update-in [:turn] inc)
+      unready-all
       get-gestures
       execute-turn
       ))
 
 (defn- game-finished? [game]
-  true)
-
-(defn new-player [name]
-  {:name name :left '() :right '()})
-
-(defn- everyone-ready? [game]
-  (every? :ready (vals (:players game))))
-
-(defn- unready-all [game]
-  (update-in game [:players] fmap #(assoc % :ready false)))
+  (< 2 (:turn game)))
 
 (defn- init-game
   "Perform game startup tasks like collecting players."

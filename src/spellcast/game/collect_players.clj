@@ -4,6 +4,9 @@
          '[spellcast.game.common :refer :all]
          '[taoensso.timbre :as log])
 
+(defn- new-player [name id]
+  {:name name :id id :left '() :right '()})
+
 (defn- remove-player [game player]
   (update-in game [:players]
              dissoc
@@ -27,7 +30,7 @@
         (:max-players game)) (disconnect game id "Player limit reached.")
     (and (:password game)
          (not= nil (:pass game))) (disconnect game id "Password incorrect.")
-    :else (let [player {:name name :id id}]
+    :else (let [player (new-player name id)]
             (log/info "Player" id "logged in as" name)
             (send-to :all (list :info (str name " has joined the game.")))
             (-> game

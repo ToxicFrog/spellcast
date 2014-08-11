@@ -92,4 +92,6 @@
 
 (defn get-player [game key]
   (or ((:players game) key)
-      (some #(= key (:name %)) (-> game :players vals))))
+      (->> game :players vals
+           (filter #(= key (:name %)))
+           first)))
