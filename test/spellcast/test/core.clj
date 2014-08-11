@@ -22,7 +22,7 @@
     socket))
 
 (deftest test-game
-  (testing "basic two-player game"
+  (testing "basic three-player game"
     ; start server
     (let [game (game/new-game :min-players 3 :max-players 3 :allow-spectators false)
           sock (net/listen-socket game 8666)

@@ -2,8 +2,13 @@
 (require '[clojure.core.async :as async]
          '[taoensso.timbre :as log])
 
-(defmacro try-thread [name & body]
+(defmacro try-thread
+  "Run a thread in a try-catch block, and react to exceptions by logging them
+  and then killing the program rather than the default behaviour, which is to
+  swallow them and kill only that thread."
+  [name & body]
   (if (and (list? (last body)) (->> body last first (= 'finally)))
+    ; It has a "finally" clause that we should splice in after the catch.
     `(async/thread
        (try
          ~@(butlast body)
@@ -11,6 +16,7 @@
            (log/errorf e# "Uncaught exception in thread " ~name)
            (System/exit 1))
          ~(last body)))
+    ; No "finally".
     `(async/thread
        (try
          ~@body
