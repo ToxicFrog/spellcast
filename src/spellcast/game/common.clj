@@ -1,5 +1,6 @@
 (ns spellcast.game.common)
 (require '[taoensso.timbre :as log]
+         '[clojure.algo.generic.functor :refer [fmap]]
          '[clojure.core.async :refer [<!! >!!]]
          '[spellcast.util :refer :all])
 
@@ -56,19 +57,18 @@
 
   Once iteration is complete, it returns (end game)."
   [game state]
-  (log/debug "State runner init" game state)
+  (log/trace "State runner init" game state)
   (let [in (:in game)
         {:keys [begin end done? handlers default]} state]
     (loop [game (begin game)]
-      (log/debug "state iteration game=" game)
-      (log/debug "done=" (done? game))
+      (log/trace "state iteration done?" (done? game) "game:" game)
       (if (done? game)
         (end game)
         (let [msg (<!! in)
               tag (keyword (first msg))
               handler (get handlers tag)
               args (cons (get-meta msg :id) (rest msg))]
-          (log/debug "run-state handling message" (meta msg) msg)
+          (log/trace "run-state handling message" (meta msg) msg)
           (if handler
             (recur (apply handler game args))
             (recur (apply default game tag args))))))))
@@ -90,8 +90,21 @@
   (send-to :all (list :chat id msg))
   game)
 
+(defn ready-handler [game id ready]
+  (do
+    (send-to :all (list :player id :ready ready))
+    (assoc-in game [:players id :ready] ready)))
+
 (defn get-player [game key]
   (or ((:players game) key)
       (->> game :players vals
            (filter #(= key (:name %)))
            first)))
+
+(defn update-players [game f & args]
+  (assoc game :players
+    (fmap #(apply f % args) (:players game))))
+
+(defn unready-all [game]
+  (update-players game assoc :ready false))
+

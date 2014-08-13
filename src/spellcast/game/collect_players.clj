@@ -54,8 +54,7 @@
       (do (send-to id (list :error "Malformed login request.")) game)))
   (defn :ready [game id ready]
     (if (get-player game id)
-      (do (send-to :all (list :info (str id " ready: " ready)))
-        (assoc-in game [:players id :ready] ready))
+      (ready-handler game id ready)
       (do (send-to id (list :error "You are not logged in.")) game)))
   (defn :disconnect [game id]
     (remove-player game id)))
