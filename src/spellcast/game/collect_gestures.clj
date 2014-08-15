@@ -14,15 +14,14 @@
   (let [[left right] (:gestures player)]
     (merge-with conj player {:left left :right right})))
 
-(defphase collect-gestures
+(defphase collect-gestures phase-defaults
   (defn done? [game]
     (every-player? game :ready))
   (defn begin [game]
     (log/info "Collecting gestures for turn" (:turn game))
     (-> game
         unready-all
-        (update-players assoc :gestures [nil nil])
-        ))
+        (update-players assoc :gestures [nil nil])))
   (defn end [game]
     (log/info "Got gestures for all players.")
     (-> game
@@ -30,6 +29,4 @@
         (update-players dissoc :gestures)))
   (defn :gestures [game id left right]
     (update-in game [:players id]
-               set-gestures left right))
-  (def :ready ready-handler)
-  (def :chat chat-handler))
+               set-gestures left right)))

@@ -20,7 +20,7 @@
         (>!! in (with-meta msg {:id id}))
         (log/tracef "[%d] => %s" id (pr-str msg)))
       (catch SocketException e
-        (log/infof "[%d] Connection error." id))
+        (log/infof "[%d] Connection error:" id e))
       (finally
         (>!! out (message id '(close)))
         (log/debugf "[%d] Reader exiting." id)))))

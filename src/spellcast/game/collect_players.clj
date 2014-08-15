@@ -7,17 +7,6 @@
 (defn- new-player [name id]
   {:name name :id id :left '() :right '()})
 
-(defn- remove-player [game player]
-  (update-in game [:players]
-             dissoc
-             (get-in game [:players player :id])))
-
-(defn- disconnect [game user msg]
-  (log/infof "Disconnecting user %d: %s" user msg)
-  (send-to user (list :error msg))
-  (send-to user '(:close))
-  (remove-player game user))
-
 (defn- add-client [game id name]
   ; reject if:
   ; another player already present with the same name
@@ -33,28 +22,18 @@
     :else (let [player (new-player name id)]
             (log/info "Player" id "logged in as" name)
             (send-to :all (list :info (str name " has joined the game.")))
-            (-> game
-                (assoc-in [:players id] player)))))
+            (assoc-in game [:players id] player))))
 
-(defphase collect-players
+(defphase collect-players phase-defaults
   (defn done? [game]
     (and
       (>= (count (:players game)) (:min-players game))
       (every-player? game :ready)))
-  (defn begin [game]
-    (log/info "Collecting players...")
-    game)
-  (defn end [game]
-    (log/info "Got enough players!")
-    game)
-  (def :chat chat-handler)
+  (defn get-handler [phase game tag & args]
+    (if (= :login tag)
+      (phase :login)
+      (apply (phase-defaults 'get-handler) phase game tag args)))
   (defn :login [game id name]
     (if (string? name)
       (add-client game id name)
-      (do (send-to id (list :error "Malformed login request.")) game)))
-  (defn :ready [game id ready]
-    (if (get-player game id)
-      (ready-handler game id ready)
-      (do (send-to id (list :error "You are not logged in.")) game)))
-  (defn :disconnect [game id]
-    (remove-player game id)))
+      (do (send-to id (list :error "Malformed login request.")) game))))
