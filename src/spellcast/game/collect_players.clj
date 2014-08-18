@@ -7,7 +7,7 @@
 (defn- new-player [name id]
   {:name name :id id :left '() :right '()})
 
-(defn- add-client [game id name]
+(defn- add-player [game id name]
   ; reject if:
   ; another player already present with the same name
   ; game at player limit
@@ -22,6 +22,11 @@
     :else (let [player (new-player name id)]
             (log/info "Player" id "logged in as" name)
             (send-to :all (list :info (str name " has joined the game.")))
+            ; Send new player structure to existing players
+            (send-to :all (list :player id player))
+            ; Send existing player list to new player
+            (doseq [[i p] (:players game)]
+              (send-to id (list :player i p)))
             (assoc-in game [:players id] player))))
 
 (defphase collect-players phase-defaults
@@ -35,5 +40,5 @@
       (apply (phase-defaults 'get-handler) phase game tag args)))
   (defn :login [game id name]
     (if (string? name)
-      (add-client game id name)
+      (add-player game id name)
       (do (send-to id (list :error "Malformed login request.")) game))))
