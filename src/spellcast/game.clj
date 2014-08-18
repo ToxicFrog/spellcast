@@ -16,11 +16,17 @@
     (log/debug (:name player) (available-spells (:left player) (:right player))))
   game)
 
+(defn- reveal-gestures [game]
+  (send-player-info game [:left :right]))
+
 (defn- run-turn [game]
   (log/info "Starting turn" (:turn game))
   (send-to :all (list :turn (:turn game)))
   (-> game
       (run-phase collect-gestures)
+      ;(run-phase pre-reveal)
+      (reveal-gestures)
+      ;(run-phase post-reveal)
       execute-turn
       (update-in [:turn] inc)
       ))

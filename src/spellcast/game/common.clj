@@ -30,19 +30,25 @@
   (assoc game :players
     (fmap #(apply f % args) (:players game))))
 
+(defn send-player-info [game keys]
+  (doseq [[id player] (game :players)]
+    (send-to :all
+             (list :player (zipmap keys (map player keys)))))
+  game)
+
 (defn unready-all [game]
-  (update-players game assoc :ready false))
+  (-> game
+      (update-players assoc :ready false)
+      (send-player-info [:ready])))
 
-(defn remove-player [game player]
-  (update-in game [:players]
-             dissoc
-             (get-in game [:players player :id])))
+(defn remove-player [game id]
+  (update-in game [:players] dissoc id))
 
-(defn disconnect [game user msg]
-  (log/infof "Disconnecting user %d: %s" user msg)
-  (send-to user (list :error msg))
-  (send-to user '(:close))
-  (remove-player game user))
+(defn disconnect [game id msg]
+  (log/infof "Disconnecting user %d: %s" id msg)
+  (send-to id (list :error msg))
+  (send-to id '(:close))
+  (remove-player game id))
 
 (defmacro defphase
   "Define a phase of the game that can be executed with run-phase.
@@ -93,7 +99,7 @@
     (send-to :all (list :chat id msg))
     game)
   (defn :ready [game id ready]
-    (send-to :all (list :player id :ready ready))
+    (send-to :all (list :player id {:ready ready}))
     (assoc-in game [:players id :ready] ready)))
 
 (defn run-phase
