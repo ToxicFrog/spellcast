@@ -76,12 +76,11 @@
                           gestures spell-code))))
 
 (defn- one-hand-sequence [gestures]
-  (let [suffix (into () gestures)]
-    (for [[spell-code spell-name] rev-spells
-          :when (spell-matches suffix spell-code)]
-      (if (#{:ff :pp :ww :ss :dd :c} (first spell-code))
-        [spell-name true]
-        [spell-name false]))))
+  (for [[spell-code spell-name] rev-spells
+        :when (spell-matches gestures spell-code)]
+    (if (#{:ff :pp :ww :ss :dd :c} (first spell-code))
+      [spell-name true]
+      [spell-name false])))
 
 (defn- hand-seq [main other]
   (map (fn [m o]

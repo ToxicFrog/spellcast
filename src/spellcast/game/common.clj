@@ -33,7 +33,7 @@
 (defn send-player-info [game keys]
   (doseq [[id player] (game :players)]
     (send-to :all
-             (list :player (zipmap keys (map player keys)))))
+             (list :player id (zipmap keys (map player keys)))))
   game)
 
 (defn unready-all [game]
@@ -128,5 +128,5 @@
               tag (keyword (first msg))
               args (cons (get-meta msg :id) (rest msg))
               handler (apply get-handler phase game tag args)]
-          (log/debug "Handling messge" msg)
+          (log/debug "Handling message" msg)
           (recur (apply handler game args)))))))

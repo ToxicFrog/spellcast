@@ -25,8 +25,7 @@
   (defn end [game]
     (log/info "Got gestures for all players.")
     (-> game
-        (update-players commit-gestures)
-        (update-players dissoc :gestures)))
+        (update-players commit-gestures)))
   (defn :gestures [game id left right]
     (update-in game [:players id]
                set-gestures left right)))

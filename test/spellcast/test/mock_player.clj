@@ -41,11 +41,6 @@
         reader (-> socket reader PushbackReader.)
         send (partial send name writer)
         wait (partial wait name reader)]
-    ; start the reader
-    ; (try-thread (str "mock-player/reader " name)
-    ;   (doseq [msg (repeatedly #(edn/read reader))]
-    ;     (log/debugf "[%s] %s" name (pr-str msg))
-    ;     (async/>!! msg)))
     ; start the writer
     (try-thread (str "mock-player/writer " name)
       ; send login info

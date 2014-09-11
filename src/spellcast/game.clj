@@ -10,29 +10,35 @@
 (defn- ask-questions [game]
   game)
 
+(defn- reveal-gestures [game]
+  (send-player-info game [:gestures]))
+
 (defn- execute-turn [game]
   (log/trace "execute-turn" game)
-  (doseq [[id player] (game :players)]
-    (log/debug (:name player) (available-spells (:left player) (:right player))))
+  (doseq [[id player] (game :players)
+          [hand spells] (available-spells (:left player) (:right player))
+          [spell both-hands] spells]
+    (log/trace id (take 8 (player :left)))
+    (log/trace id (take 8 (player :right)))
+    (log/trace id (available-spells (:left player) (:right player)))
+    (let [hand (if both-hands :both hand)]
+      (send-to :all (list :cast id hand spell))))
   game)
 
-(defn- reveal-gestures [game]
-  (send-player-info game [:left :right]))
-
 (defn- run-turn [game]
-  (log/info "Starting turn" (:turn game))
+  (log/info "Starting turn" (inc (:turn game)))
   (send-to :all (list :turn (:turn game)))
   (-> game
+      (update-in [:turn] inc)
       (run-phase collect-gestures)
       ;(run-phase pre-reveal)
       (reveal-gestures)
       ;(run-phase post-reveal)
-      execute-turn
-      (update-in [:turn] inc)
+      (execute-turn)
       ))
 
 (defn- game-finished? [game]
-  (< 3 (:turn game)))
+  (>= (game :turn) (game :turn-limit 1)))
 
 (defn- init-game
   "Perform game startup tasks like collecting players."
@@ -66,4 +72,4 @@
     (assoc init :in in
                 :out out :out-bus out-bus
                 :players {}
-                :turn 1)))
+                :turn 0)))
