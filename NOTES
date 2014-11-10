@@ -1,0 +1,78 @@
+Fundamentally, a game state consists of an event log, a set of players, and a set of NPCs. A player has two lists of gestures, one for each hand, along with various status information (status effect timers and parameters, HP); an NPC has similar status information and, optionally, an owner (creatures like elementals are not owned).
+
+Ideally, each turn would consist of a single action from each player: the player specifies left and right hand gestures, spells and spell targets, and targets for any monsters they control or are about to summon. Unfortunately, things are not always that simple. For example, the set of valid targets may change as a result of spells being cast, such as Summon ____; Spellbinder handles this by permitting preemptive targeting, e.g. "the monster he's about to summon" is a valid target.
+
+Further confusing matters, some spells *require* questions to be answered after orders are submitted; the caster of Summon Elemental gets to look at revealed gestures before choosing which element to use, and the victim of Charm Person doesn't know what spell (if any) the charmed hand is casting until after orders are entered.
+
+The Spellcast approach is to just ask for gestures initially, and then ask the players (potentially several rounds of) questions, revealing the entered gestures at some point (e.g. after asking "which gesture do you want your opponent to make" but before asking "which elemental do you want to summon"). This may still be the best way to handle it.
+
+"Simple" game hosting flow: you run spellcast.jar, and it asks if you want a web game or a tty game (or a hybrid? That might be possible). Also asks for port, min/max players, password, allow spectators yes/no.
+
+tty flow: connect to socket, enter name (or "spectator"), password (if required), select pronouns. Enter "ready" to begin game. Game starts when max >= (len players) >= min and all players have entered "ready". If at max players, new players cannot join, only spectate, even if game hasn't started.
+
+web flow: same, except it's all one form, then a page listing the players connected and ready status.
+
+Spell selection: if a valid spell is formed the player *must* cast it; they can cast it at "nothing" but they can't elect not to cast it at all. Thus, if only one valid spell is formed it will not ask what to cast, only where to cast it. Spells cast at nothing are historically cast "up into the air".
+
+Protocol:
+
+Messages are EDN lists. The first element is a keyword defining the the type of message. The remaining parameters are arguments to the message.
+
+CLIENT
+
+  (:login name pass)
+
+Log in with the given name and password. The password may be omitted on servers that do not require it.
+
+  (:ready true|false)
+
+Report the player as ready (or not ready) for the next phase of the game. What exactly that means depends on the current state of the game.
+
+  (:gestures left right)
+
+Specify the gestures for this turn. Gestures are :d :s :f :p :w :c :k, or nil for no gesture.
+
+  (:chat msg)
+
+Speak the given message to the other players.
+
+SERVER
+
+  (:turn n)
+
+Indicate the start of turn number n.
+
+  (:info msg)
+
+An informational message.
+
+  (:error msg)
+
+An error message, often followed by a disconnect.
+
+  (:player id {k v...})
+
+Update or create the player with the given id and properties.
+
+  (:chat id msg)
+
+A chat message from the given player.
+
+; pubsub protocol
+; two ps buses, one for incoming messages and one for outgoing ones
+; (we do this so that clients can't directly put things on the outbus)
+; incoming messages just use the :tag from the message as the topic
+; invalid tags (including stuff not valid at the current stage of the game)
+; are just ignored because they have no subscribers
+; outgoing messages are tagged either with either:
+; N (a client number)
+; :all (all clients)
+; :all with an :exclude key which is a set of players to exclude
+; :except (in which case the :exclude key is a set of players to exclude)
+; e.g.
+; (send-to 0 {:from 1 :whisper "Hello"})
+; => {:tag 0 :from 1 :whisper "Hello"}
+; (send-all {:log "Game starting."})
+; => {:tag :all :log "Game starting."}
+; (send-except #{0} {:from 0 :say "Hi everyone!"})
+; => {:tag :all :exclude #{0} :from 0 :say "Hi everyone!"}
