@@ -1,4 +1,4 @@
-(ns spellcast.game (:gen-class))
+(ns spellcast.game)
 (require '[clojure.core.async :as async :refer [<! >! <!! >!! chan go pub close! thread]]
          '[spellcast.spells :refer [available-spells]]
          '[spellcast.util :refer :all]

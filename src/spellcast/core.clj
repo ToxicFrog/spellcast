@@ -1,7 +1,7 @@
 (ns spellcast.core (:gen-class))
-(use 'spellcast.game)
 (require '[spellcast.net :as net]
          '[spellcast.util :refer :all]
+         '[spellcast.game :refer :all]
          '[clojure.core.async :as async]
          '[taoensso.timbre :as log])
 
