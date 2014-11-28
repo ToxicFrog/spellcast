@@ -1,7 +1,8 @@
 # Spellcast: a Game of Dueling Wizards
 
-This is a client-server version of Richard Bartle's [Spellcast][2] (aka
-Spellbinder), heavily influenced by Andrew Plotkin's [X11 version][3].
+This is a client-server version of Richard Bartle's [Spellcast][2] (aka Spellbinder), heavily influenced by Andrew Plotkin's [X11 version][3].
+
+It is still under construction, and at present has no UI and no rules engine.
 
 [2]: http://mud.co.uk/richard/spellbnd.htm
 [3]: http://www.eblong.com/zarf/spellcast.html
