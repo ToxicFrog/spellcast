@@ -28,6 +28,7 @@
   [[lein-pprint         "1.1.2"]
    [lein-ancient        "0.6.8"]
    [lein-cljsbuild      "1.1.3"]
+   [lein-ring "0.9.7"]
    ]
 
   :cljsbuild
@@ -39,6 +40,7 @@
                 :pretty-print true}}]}
 
   :main example.server
+  :ring {:handler example.server/main-ring-handler}
 
   ;; Call `lein start-repl` to get a (headless) development repl that you can
   ;; connect to with Cider+emacs or your IDE of choice:
