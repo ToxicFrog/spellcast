@@ -6,7 +6,7 @@
    [clojure.string     :as str]
    [ring.middleware.defaults]
    [ring.util.response :as response]
-   [compojure.core     :as comp :refer (defroutes GET POST)]
+   [compojure.core     :as comp :refer (defroutes GET POST wrap-routes)]
    [compojure.route    :as route]
    [hiccup.core        :as hiccup]
    [hiccup.form        :as form]
@@ -60,16 +60,6 @@
     [:script {:src "main.js"}] ; Include our cljs target
     ))
 
-(defn login-handler
-  "Here's where you'll add your server-side login/auth procedure (Friend, etc.).
-  In our simplified example we'll just always successfully authenticate the user
-  with whatever user-id they provided in the auth request."
-  [ring-req]
-  (let [{:keys [session params]} ring-req
-        {:keys [user-id]} params]
-    (debugf "Login request: %s" params)
-    {:status 200 :session (assoc session :uid user-id)}))
-
 (defn wrap-debug [handler]
   (fn [req]
     (timbre/debug "request:" req)
@@ -96,8 +86,13 @@
   (-> (response/redirect "/login")
       (assoc-in [:session :uid] nil)))
 
-(defroutes logged-in-routes
+(defn require-login [handler]
+  (fn [req]
+    (if (-> req :session :uid)
+      (handler req)
+      (response/redirect "/login"))))
 
+(defroutes logged-in-routes
   (GET  "/logout"   req (user-logout req))
   (GET  "/game"     req "game list goes here")
   (GET  "/game/:id" [id] (str "game info for " id))
@@ -112,8 +107,8 @@
 
 (defroutes ring-routes
   (GET  "/"         req (redirect-login req "/login" "/game"))
-  logged-in-routes
-  logged-out-routes
+  (wrap-routes logged-in-routes require-login)
+  logged-out-routes ; todo: accessible only to logged-out users; logged-in users should be redirected to /game
   (route/resources "/")
   (route/not-found "<h1>Page not found</h1>"))
 
