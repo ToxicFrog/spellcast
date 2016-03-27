@@ -86,11 +86,11 @@
   (-> (response/redirect "/login")
       (assoc-in [:session :uid] nil)))
 
-(defn require-login [handler]
+(defn require-login-is [handler logged-in? redirect-to]
   (fn [req]
-    (if (-> req :session :uid)
+    (if (= (-> req :session :uid boolean) logged-in?)
       (handler req)
-      (response/redirect "/login"))))
+      (response/redirect redirect-to))))
 
 (defroutes logged-in-routes
   (GET  "/logout"   req (user-logout req))
@@ -107,8 +107,8 @@
 
 (defroutes ring-routes
   (GET  "/"         req (redirect-login req "/login" "/game"))
-  (wrap-routes logged-in-routes require-login)
-  logged-out-routes ; todo: accessible only to logged-out users; logged-in users should be redirected to /game
+  (wrap-routes logged-in-routes #(require-login-is % true "/login"))
+  (wrap-routes logged-out-routes #(require-login-is % false "/game"))
   (route/resources "/")
   (route/not-found "<h1>Page not found</h1>"))
 
