@@ -94,7 +94,7 @@
   that they're included yourself if you're not using `wrap-defaults`."
   (-> ring-routes
       wrap-debug
-      (ring.middleware.defaults/wrap-defaults ring.middleware.defaults/site-defaults)))
+      (ring.middleware.defaults/wrap-defaults (assoc ring.middleware.defaults/site-defaults :security nil))))
 
 ;;;; Sente event handlers
 
