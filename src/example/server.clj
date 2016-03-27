@@ -5,9 +5,11 @@
   (:require
    [clojure.string     :as str]
    [ring.middleware.defaults]
+   [ring.util.response :as response]
    [compojure.core     :as comp :refer (defroutes GET POST)]
    [compojure.route    :as route]
    [hiccup.core        :as hiccup]
+   [hiccup.form        :as form]
    [clojure.core.async :as async  :refer (<! <!! >! >!! put! chan go go-loop)]
    [taoensso.encore    :as encore :refer ()]
    [taoensso.timbre    :as timbre :refer (tracef debugf infof warnf errorf)]
@@ -73,19 +75,57 @@
     (timbre/debug "request:" req)
     (handler req)))
 
+(defn redirect-login [req not-logged-in logged-in]
+  (if (-> req :session :uid)
+    (response/redirect logged-in)
+    (response/redirect not-logged-in)))
+
+(defn login-page [req]
+  (hiccup/html
+    [:h1 "Login"]
+    (form/form-to [:post "/login"]
+                  (form/text-field "username")
+                  (form/drop-down "pronouns" ["they" "she" "he" "it"] "they")
+                  (form/submit-button "login"))))
+
+(defn user-login [req]
+  (-> (response/redirect "/game")
+      (assoc-in [:session :uid] (-> req :params :username))))
+
+(defn user-logout [req]
+  (-> (response/redirect "/login")
+      (assoc-in [:session :uid] nil)))
+
+(defroutes logged-in-routes
+
+  (GET  "/logout"   req (user-logout req))
+  (GET  "/game"     req "game list goes here")
+  (GET  "/game/:id" [id] (str "game info for " id))
+  (GET  "/chsk"  ring-req (ring-ajax-get-or-ws-handshake ring-req))
+  (POST "/chsk"  ring-req (ring-ajax-post                ring-req))
+  )
+
+(defroutes logged-out-routes
+  (GET  "/login"    req (login-page req))
+  (POST "/login"    req (user-login req))
+  )
+
+(defroutes ring-routes
+  (GET  "/"         req (redirect-login req "/login" "/game"))
+  logged-in-routes
+  logged-out-routes
+  (route/resources "/")
+  (route/not-found "<h1>Page not found</h1>"))
+
+; all non-/login paths should redirect to /login if not logged in.
+; GET /login serves the login form
+; POST /login logs in and redirects to /game
 ; routes
 ; / -> /login if not logged in, /game otherwise
 ; /game -> list of games currently playing
 ; /game/new -> create new game screen
 ; /game/join -> list of games to join
 ; /game/:id -> play interface
-(defroutes ring-routes
-  (GET  "/"      ring-req (landing-pg-handler            ring-req))
-  (GET  "/chsk"  ring-req (ring-ajax-get-or-ws-handshake ring-req))
-  (POST "/chsk"  ring-req (ring-ajax-post                ring-req))
-  (POST "/login" ring-req (login-handler                 ring-req))
-  (route/resources "/")
-  (route/not-found "<h1>Page not found</h1>"))
 
 (def main-ring-handler
   "**NB**: Sente requires the Ring `wrap-params` + `wrap-keyword-params`
