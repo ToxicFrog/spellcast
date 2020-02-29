@@ -1,5 +1,5 @@
 (ns spellcast.text
-  (:require [comb.template :as template]))
+  (:require [antlers.core :refer [render-string]]))
 
 (def pronouns-map
   {:they {:sub "they" :obj "them" :pos "their" :ref "themself"}
@@ -11,4 +11,4 @@
   (get-in pronouns-map [(player :pronouns) context]))
 
 (defn msg [text & {:as bindings}]
-  (template/eval text (assoc bindings :prn prn)))
+  (render-string text (assoc bindings :prn prn :get get)))

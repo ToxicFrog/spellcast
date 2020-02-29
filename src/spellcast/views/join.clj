@@ -2,7 +2,7 @@
   (:require [hiccup.page :refer [html5 include-css include-js]]
             [hiccup.form :as form]
             [ring.util.response :as r]
-            ;[spellcast.model :refer [game]]
+            [spellcast.game :as game]
             ))
 
 (defn- join-form []
@@ -18,16 +18,12 @@
 
 
 (defn post [request]
-  ; TODO
-  ; If the game is full or the user is already logged in or they picked a name
-  ; that's already taken, abort.
   (let [session (request :session)
-        {:keys [name pronouns]} (request :params)
-        session' (assoc session :name name :pronouns pronouns)]
-    (cond
-      (not (and name pronouns)) (r/status 400)
-      :default (-> (r/redirect "/" 303)
-                   (assoc :session session')))))
+        params (request :params)]
+    (game/add-player! params)
+    (-> (r/redirect "/game" 303)
+        (assoc :session session)
+        (assoc-in [:session :name] (params :name)))))
 
 (defn get [request]
   (html5
