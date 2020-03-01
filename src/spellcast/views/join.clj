@@ -3,6 +3,7 @@
             [hiccup.form :as form]
             [ring.util.response :as r]
             [spellcast.game :as game]
+            [spellcast.logging :refer [log]]
             ))
 
 (defn- join-form []
@@ -21,11 +22,13 @@
   (let [session (request :session)
         params (request :params)]
     (game/add-player! params)
+    (log {:player (params :name)}
+      :all "{{player}} has joined the game.")
     (-> (r/redirect "/game" 303)
         (assoc :session session)
         (assoc-in [:session :name] (params :name)))))
 
-(defn get [request]
+(defn page [request]
   (html5
     [:head
      [:title "Spellcast"]

@@ -5,26 +5,42 @@
   (:require [compojure.core :refer [defroutes routes GET POST]]
             [compojure.coercions :refer [as-int]]
             [schema.core :as s]
-            [spellcast.views.join :as join]
-            [spellcast.views.game :as vgame]
-            [hiccup.middleware :as hiccup]
+            [spellcast.views.join :as views.join]
+            [spellcast.views.game :as views.game]
+            [hiccup.middleware :refer [wrap-base-url]]
+            [hiccup.util :refer [escape-html]]
+            [ring.util.request :as rq]
+            [clojure.pprint]
             [compojure.handler :as handler]
             [compojure.route :as route]
-            [spellcast.text :as text]
+            [spellcast.logging :refer [log]]
             [spellcast.game :as game]
+            [clojure.string :as string]
             [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
             [ring.util.response :as r]))
 
 (defn init []
   (println "spellcast is starting")
   (s/set-fn-validation! true)
-  (game/reset!))
+  (game/reset!)
+  (log {} :all "Game starts."))
 
 (defn destroy []
   (println "spellcast is shutting down"))
 
 (defn- logged-in [request]
   (some? (get-in request [:session :name])))
+
+(defn- chat [request]
+  (let [name (get-in request [:session :name])
+        text (-> request rq/body-string)]
+    (println "chat" name text)
+    (log {:name name :text text}
+      name "You say, \"{{text}}\""
+      :else "{{name}} says, \"{{text}}\""))
+  (r/response ""))
+
+(defn- debuglog [val] (println val) val)
 
 (defroutes app-routes
   (GET "/" request
@@ -34,15 +50,28 @@
   (GET "/join" request
        (if (logged-in request)
          (r/redirect "/game")
-         (join/get request)))
+         (views.join/page request)))
   (POST "/join" request
        (if (logged-in request)
          (r/redirect "/game")
-         (join/post request)))
+         (views.join/post request)))
   (GET "/game" request
        (if (logged-in request)
-         (str (game/state))
+         (views.game/page request)
          (r/redirect "/join")))
+  (GET "/state" request
+       (str "<pre>"
+         (with-out-str (clojure.pprint/pprint (game/state)))
+         "</pre>"))
+  (POST "/talk" request
+        (if (logged-in request)
+          (chat request)
+          (-> (r/response "not logged in") (r/status 400))))
+  (GET "/log" request
+       (as-> (game/get-log (get-in request [:session :name])) $
+             (string/join "<br>\n" $)
+             (r/response $)
+             (r/content-type $ "text/html")))
   (GET "/part" request
        (game/reset!)
        {:status 302
@@ -73,6 +102,6 @@
             (assoc-in [:session :cookie-name] "spellcast-session") ;(str "spellcast-" (System/currentTimeMillis)))
             (assoc-in [:session :cookie-attrs :max-age] (* 72 60 60))
             (assoc-in [:security :anti-forgery] false)))
-      (hiccup/wrap-base-url)))
+      (wrap-base-url)))
 
 (def handler #'app)
