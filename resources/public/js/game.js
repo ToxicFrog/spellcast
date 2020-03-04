@@ -1,7 +1,7 @@
 function refreshLog() {
   fetch("/log", {credentials: "same-origin"})
   .then(function(response) {
-    let log = document.getElemntById('log');
+    let log = document.getElementById('log');
     if (!response.ok) {
       log.innerHTML = 'Error reading message log -- reload the page.';
       setTimeout(refreshLog, 10000);

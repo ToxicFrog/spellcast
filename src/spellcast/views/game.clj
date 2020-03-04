@@ -5,27 +5,60 @@
             [spellcast.game :as game]
             ))
 
+(comment
+  "
+  TODO: how the fuck do I do this in CSS?
+  ------------------------------
+  |    |    |    |    |    |   |
+  |    |gest|    |    |    |   |
+  |    |ures|    |    |  <--------- subtable for gestures
+  |log |    |    |    |    |   |
+  |    |-----------------------|
+  |----|  questions      | stat|
+  |chat|             ^   |  us |
+  -------------------|----------
+                     |subtable for questions
+  ")
+
+
+(defn gesture-table-for-player [name]
+  [:table.gestures
+   [:tr [:th {:colspan 2} name]]
+   (for [n (reverse (range 0 8))]
+     [:tr
+      [:td [:img {:id (str "gesture:" name ":L:" n)
+                      :src "/img/nothing-left.png"}]]
+      [:td [:img {:id (str "gesture:" name ":R:" n)
+                      :src "/img/nothing-right.png"}]]
+      ])])
+
+(defn gesture-tables []
+  (let [players (-> (game/state) :players keys)]
+    [:table
+     [:tr.header [:th {:colspan (count players)} "GESTURES"]]
+     [:tr
+      (for [p players] [:td (gesture-table-for-player p)])]]))
+
 (defn page [{:keys [:session] :as request}]
   (html5
     [:head
      [:title "Spellcast"]
      (include-js "/js/game.js")
-     (include-css "/css/screen.css")]
+     (include-css "/css/spellcast.css")]
     [:body {:onload "initSpellcast();"}
-     [:div#log]
-     [:input#talk]
-     ]))
-     ; [:table
-     ;  [:tr
-     ;   [:td {:width "120em"}
-     ;    (seq (interpose [:br] (game/log)))]
-     ;   [:td ...players...]]]]
-; )
-;    (-> (str
-;          (text/msg "{{get p1 :name}} strides confidently into the arena. The referee casts the formal Dispel Magic and Anti-Magic on {{prn p1 :obj}}..."
-;                    :p1 (game/player (session :name))
-;          "\n\n"
-;          request)
-;        (r/response)
-;        (r/content-type "text/plain")
-;        (assoc :session session))))
+     [:table#ui
+      [:tr
+       [:td#chat-ui {:rowspan 3}
+        [:table
+         [:tr.header [:th "GAME LOG"]]
+         [:tr [:td [:div#log]]]
+         [:tr [:td [:input#talk]]]]]
+       [:td#gesture-ui (gesture-tables)]]
+      [:tr
+       [:td [:button#submit {:disabled true} "LOADING"]]]
+      [:tr
+       [:td#status-ui
+        [:table
+         [:tr.header [:th "STATUS"]]
+         [:tr [:td#status]]]]]]
+    ]))
