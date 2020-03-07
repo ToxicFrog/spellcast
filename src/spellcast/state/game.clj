@@ -37,7 +37,7 @@
 
 (defn add-player [world :- Game, player :- Player]
   (if (contains? (world :players) (player :name))
-    (throw (IllegalArgumentException. (str "A player named " name " is already in the arena.")))
+    (throw (IllegalArgumentException. (str "A player named " (player :name) " is already in the arena.")))
     (assoc-in world [:players (player :name)] player)))
 
 (defn get-player [world :- Game, name :- s/Str] :- Player
