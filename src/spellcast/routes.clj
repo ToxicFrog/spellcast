@@ -13,7 +13,6 @@
             [clojure.pprint]
             [compojure.handler :as handler]
             [compojure.route :as route]
-            [spellcast.logging :refer [log]]
             [spellcast.game :as game]
             [clojure.string :as string]
             [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
@@ -21,9 +20,10 @@
 
 (defn init []
   (println "spellcast is starting")
+  (io.aviso.repl/install-pretty-exceptions)
   (s/set-fn-validation! true)
   (game/reset!)
-  (log {} :all "Game starts."))
+  (game/log! {} :all "Game starts."))
 
 (defn destroy []
   (println "spellcast is shutting down"))
@@ -35,7 +35,7 @@
   (let [name (get-in request [:session :name])
         text (-> request rq/body-string)]
     (println "chat" name text)
-    (log {:name name :text text}
+    (game/log! {:name name :text text}
       name "You say, \"{{text}}\""
       :else "{{name}} says, \"{{text}}\""))
   (r/response ""))

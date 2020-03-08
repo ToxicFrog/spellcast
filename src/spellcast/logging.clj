@@ -1,6 +1,7 @@
 (ns spellcast.logging
   (:require [antlers.core :refer [render-string]]
-            [spellcast.game :as game]
+            [spellcast.state.game :refer [Game add-log]]
+            [schema.core :as s :refer [def defn defschema fn]]
             [clojure.set :refer [difference]]))
 
 (def pronouns-map
@@ -19,23 +20,21 @@
             :name #(get % :name)}
       bindings)))
 
-(defn log
-  "Log one or more messages. `bindings` is a map of bindings to be used with (msg) to render each message (these bindings are common to all messages in this call to log). `rest` is a sequence of `name message` pairs. Each message will be logged to the named player. You can also use :all to log to all players, or :else to log to all players not explicitly mentioned in this call.
-  log is non-transactional (i.e. there is no guarantee log messages won't be interleaved with messages from other calls) but the messages are guaranteed to be logged in the order they are provided."
-  [bindings & rest]
+(defn log :- Game
+  "Log one or more messages. `bindings` is a map of bindings to be used with (msg) to render each message (these bindings are common to all messages in this call to log). `rest` is a sequence of `name message` pairs. Each message will be logged to the named player. You can also use :all to log to all players, or :else to log to all players not explicitly mentioned in this call."
+  [world :- Game, bindings :- {s/Keyword s/Any}, & rest]
   (let [messages (partition 2 rest)
         names (-> (map first messages) (set) (disj :all :else))
         else (complement names)
-        ]
+        log-one (fn log-one [world [dst msg]]
+                  (cond
+                    (set? dst) (add-log world msg dst)
+                    (string? dst) (add-log world msg #{dst})
+                    (= :else dst) (add-log world msg else)
+                    (= :all dst) (add-log world msg (constantly true))))]
     (->> messages
          (map (fn [[dst msg]] [dst (render-msg bindings msg)]))
-         (map (fn [[dst msg]]
-                (cond
-                  (set? dst) (game/log! msg dst)
-                  (string? dst) (game/log! msg #{dst})
-                  (= :else dst) (game/log! msg else)
-                  (= :all dst) (game/log! msg (constantly true)))))
-         dorun)))
+         (reduce log-one world))))
 
 (comment
   ; Example usage
