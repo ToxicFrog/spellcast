@@ -15,7 +15,7 @@
                  [hiccup "1.0.5"]
                  [ring/ring-defaults "0.3.2"]
                  [ring "1.7.0"]
-                 [prismatic/schema "1.1.7"]
+                 [prismatic/schema "1.1.12"]
                  [caribou/antlers "0.6.1"]
                  ]
   :plugins [[lein-ring "0.12.5"]

@@ -22,7 +22,9 @@
 (defschema PlayerParams
   {:name s/Str :pronouns s/Str})
 
-(defn ->Player [params :- PlayerParams, hp :- s/Int]
+(defn ->Player :- Player
+  "Create a new Player object."
+  [params :- PlayerParams, hp :- s/Int]
   {:name (params :name)
    :pronouns (-> params :pronouns keyword)
    :hp hp
