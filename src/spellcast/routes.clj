@@ -29,7 +29,7 @@
   (println "spellcast is shutting down"))
 
 (defn- logged-in [request]
-  (some? (get-in request [:session :name])))
+  (get-in request [:session :name]))
 
 (defn- chat [request]
   (let [name (get-in request [:session :name])
@@ -81,6 +81,10 @@
         :cookies (->> (request :cookies)
                       (map (fn [[k v]] [k {:value "" :max-age 0}]))
                       (into {}))})
+  (GET "/:evt" [evt :as request]
+       (game/dispatch-event! (logged-in request) (request :params)))
+  (POST "/:evt" [evt :as request]
+       (game/dispatch-event! (logged-in request) (request :params) (rq/body-string request)))
   (route/resources "/")
   (route/not-found "Not Found"))
 

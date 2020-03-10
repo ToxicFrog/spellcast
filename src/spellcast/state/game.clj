@@ -17,9 +17,21 @@
   {:max-players (s/constrained s/Int (partial < 1))
    :max-hp (s/constrained s/Int pos?)})
 
+(defschema GameState
+  (s/enum
+    ; waiting for all players to connect; ends by placing all players in the
+    ; arena and moving to ingame
+    :pregame
+    ; test state that arbitrarily picks a winner and then moves to postgame
+    :ingame
+    ; permits viewing the log and talking but not entering any actions
+    :postgame
+    ))
+
 (defschema Game
   {:players {s/Str Player}
    :settings GameSettings
+   :state GameState
    :log [LogMessage]})
 
 (defn ->Game :- Game
@@ -27,6 +39,7 @@
   [settings :- GameSettings]
   {:players {}
    :settings settings
+   :state :pregame
    :log []})
 
 (defn add-log :- Game
