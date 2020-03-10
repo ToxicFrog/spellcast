@@ -11,7 +11,7 @@
   (atom (->Game SETTINGS) :validator (s/validator Game)))
 
 (defn state [] @world)
-(defn reset! [] (swap! world (constantly (->Game SETTINGS))))
+(defn reset-game! [] (reset! world (->Game SETTINGS)))
 
 (defn add-player! [params :- PlayerParams]
   (swap! world game/add-player (->Player params (-> @world :settings :max-hp))))

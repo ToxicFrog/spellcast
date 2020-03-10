@@ -22,7 +22,7 @@
   (println "spellcast is starting")
   (io.aviso.repl/install-pretty-exceptions)
   (s/set-fn-validation! true)
-  (game/reset!)
+  (game/reset-game!)
   (game/log! {} :all "Game starts."))
 
 (defn destroy []
@@ -73,7 +73,7 @@
              (r/response $)
              (r/content-type $ "text/html")))
   (GET "/part" request
-       (game/reset!)
+       (game/reset-game!)
        {:status 302
         :headers {"Location" "/"}
         :body ""
