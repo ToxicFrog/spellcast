@@ -31,7 +31,7 @@
   [& rest]
   (let [response (atom nil)]
     (swap! world
-      (fn [world]
+      (fn event-swapper [world]
         (let [[world' response'] (apply event/dispatch world rest)]
           (reset! response response')
           world')))

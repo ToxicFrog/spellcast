@@ -27,7 +27,7 @@ function initSpellcast() {
   let talk = document.getElementById("talk");
   talk.addEventListener(
     'change', function(event) {
-      post('/talk', event.target.value);
+      post('/log', event.target.value);
       event.target.value = '';
     })
 }

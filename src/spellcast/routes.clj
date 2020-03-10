@@ -31,15 +31,6 @@
 (defn- logged-in [request]
   (get-in request [:session :name]))
 
-(defn- chat [request]
-  (let [name (get-in request [:session :name])
-        text (-> request rq/body-string)]
-    (println "chat" name text)
-    (game/log! {:name name :text text}
-      name "You say, \"{{text}}\""
-      :else "{{name}} says, \"{{text}}\""))
-  (r/response ""))
-
 (defn- debuglog [val] (println val) val)
 
 (defroutes app-routes
@@ -63,15 +54,6 @@
        (str "<pre>"
          (with-out-str (clojure.pprint/pprint (game/state)))
          "</pre>"))
-  (POST "/talk" request
-        (if (logged-in request)
-          (chat request)
-          (-> (r/response "not logged in") (r/status 400))))
-  (GET "/log" request
-       (as-> (game/get-log (get-in request [:session :name])) $
-             (string/join "<br>\n" $)
-             (r/response $)
-             (r/content-type $ "text/html")))
   (GET "/part" request
        (game/reset-game!)
        {:status 302
