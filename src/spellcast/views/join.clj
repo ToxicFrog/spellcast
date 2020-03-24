@@ -7,7 +7,7 @@
 
 (defn- join-form []
   [:body
-   (form/form-to [:post "/join"]
+   (form/form-to [:post "/game/join"]
                  (form/label "name" "Name")
                  (form/text-field "name")
                  [:br]
@@ -29,4 +29,4 @@
       false nil
       ; If they aren't logged in and the game isn't full, let them in.
       (-> request :session :name nil?) (join-form)
-      :default (-> (r/response "Internal error in /join") (r/status 500)))))
+      :default (-> (r/response "Internal error in /game/join") (r/status 500)))))

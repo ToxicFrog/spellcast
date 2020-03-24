@@ -38,17 +38,14 @@
   (GET "/" request
        (cond
          (logged-in request) (r/redirect "/game")
-         :else (r/redirect "/join")))
-  (GET "/game" request
-       (if (logged-in request)
-         (views.game/page request)
-         (r/redirect "/join")))
-  (GET "/state" request
+         :else (r/redirect "/game/join")))
+  (GET "/game" request (views.game/page request))
+  (GET "/debug/state" request
        (str "<pre>"
          (with-out-str (clojure.pprint/pprint (request :session)))
          (with-out-str (clojure.pprint/pprint (game/state)))
          "</pre>"))
-  (GET "/part" request
+  (GET "/debug/reset" request
        (game/reset-game!)
        {:status 302
         :headers {"Location" "/"}
@@ -57,9 +54,9 @@
         :cookies (->> (request :cookies)
                       (map (fn [[k v]] [k {:value "" :max-age 0}]))
                       (into {}))})
-  (GET "/:evt" [evt :as request]
+  (GET "/game/:evt" [evt :as request]
        (game/dispatch-event! (logged-in request) request))
-  (POST "/:evt" [evt :as request]
+  (POST "/game/:evt" [evt :as request]
        (game/dispatch-event! (logged-in request) request (rq/body-string request)))
   (route/resources "/")
   (route/not-found "Not Found"))
@@ -74,9 +71,27 @@
       (println "")
       response)))
 
+(defn wrap-session-redirect [handler]
+  (fn [request]
+    (let [joined (-> request :session :name some?)
+          uri (request :uri)]
+      (println "wrap-redirect" joined uri)
+      (cond
+        ; If they aren't logged in, redirect anything in /game to /join/game
+        (and (not joined)
+          (string/starts-with? uri "/game")
+          (not= "/game/join" uri))
+        {:status 302 :headers {"Location" "/game/join"} :body ""}
+        ; If they are logged in, don't let them access /game/join, bounce them to /game instead
+        (and joined (= "/game/join" uri))
+        {:status 302 :headers {"Location" "/game"} :body ""}
+        ; Everything else falls through to the rest of the handlers.
+        :else (handler request)))))
+
 (def app
   (-> (routes app-routes)
       (wrap-session-debug)
+      (wrap-session-redirect)
       (wrap-defaults
         (-> site-defaults
             (assoc-in [:session :cookie-name] "spellcast-session") ;(str "spellcast-" (System/currentTimeMillis)))

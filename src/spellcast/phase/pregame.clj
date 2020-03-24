@@ -33,23 +33,24 @@
     (game/get-player world (player :name)) "A player with that name is already in the game."
     :else nil))
 
+
 (defmethod dispatch [:pregame :join]
-  ([world player request]
-   (println "dispatch" world player request)
-   (if player
-     [world (r/redirect "/game")]
-     [world (views.join/page request)]))
-  ([world player request body]
-   (let [new-player (->Player (request :params) (-> world :settings :max-hp))
-         error (join-error world new-player)
+  ; On GET serve the "join game" page.
+  ; We don't need to worry about the player already being logged in because
+  ; the global redirect protects us from that.
+  ([world _ request]
+   (println "dispatch" world request)
+   [world (views.join/page request)])
+  ; On POST, attempt to join the player to the game.
+  ([world _ request body]
+   (let [player (->Player (request :params) (-> world :settings :max-hp))
+         error (join-error world player)
          session (request :session)]
-     (cond
-       player [world (r/redirect "/game")]
-       error [world (r/bad-request error)]
-       :else
+     (if error
+       [world error]
        [(-> world
-            (game/add-player new-player)
-            (log {:player (new-player :name)}
+            (game/add-player player)
+            (log {:player (player :name)}
               :all "{{player}} has joined the game."))
         (-> (r/redirect "/game" 303)
             (assoc :session session)

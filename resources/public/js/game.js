@@ -1,5 +1,5 @@
 function refreshLog() {
-  fetch("/log", {credentials: "same-origin"})
+  fetch("/game/log", {credentials: "same-origin"})
   .then(function(response) {
     let log = document.getElementById('log');
     if (!response.ok) {
@@ -27,7 +27,7 @@ function initSpellcast() {
   let talk = document.getElementById("talk");
   talk.addEventListener(
     'change', function(event) {
-      post('/log', event.target.value);
+      post('/game/log', event.target.value);
       event.target.value = '';
     })
 }
