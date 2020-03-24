@@ -15,6 +15,7 @@
             [compojure.route :as route]
             [spellcast.game :as game]
             [clojure.string :as string]
+            [spellcast.phase.pregame]
             [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
             [ring.util.response :as r]))
 
@@ -38,20 +39,13 @@
        (cond
          (logged-in request) (r/redirect "/game")
          :else (r/redirect "/join")))
-  (GET "/join" request
-       (if (logged-in request)
-         (r/redirect "/game")
-         (views.join/page request)))
-  (POST "/join" request
-       (if (logged-in request)
-         (r/redirect "/game")
-         (views.join/post request)))
   (GET "/game" request
        (if (logged-in request)
          (views.game/page request)
          (r/redirect "/join")))
   (GET "/state" request
        (str "<pre>"
+         (with-out-str (clojure.pprint/pprint (request :session)))
          (with-out-str (clojure.pprint/pprint (game/state)))
          "</pre>"))
   (GET "/part" request
@@ -64,16 +58,16 @@
                       (map (fn [[k v]] [k {:value "" :max-age 0}]))
                       (into {}))})
   (GET "/:evt" [evt :as request]
-       (game/dispatch-event! (logged-in request) (request :params)))
+       (game/dispatch-event! (logged-in request) request))
   (POST "/:evt" [evt :as request]
-       (game/dispatch-event! (logged-in request) (request :params) (rq/body-string request)))
+       (game/dispatch-event! (logged-in request) request (rq/body-string request)))
   (route/resources "/")
   (route/not-found "Not Found"))
 
 (defn wrap-session-debug [handler]
   (fn [request]
     (let [response (handler request)]
-      (println (request :uri))
+      (println (request :request-method) (request :uri))
       (println ">>" (request :session))
       (println "<<" (response :session))
       (println "==" (str (game/state)))
@@ -82,7 +76,7 @@
 
 (def app
   (-> (routes app-routes)
-      ; (wrap-session-debug)
+      (wrap-session-debug)
       (wrap-defaults
         (-> site-defaults
             (assoc-in [:session :cookie-name] "spellcast-session") ;(str "spellcast-" (System/currentTimeMillis)))

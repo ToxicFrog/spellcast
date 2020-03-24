@@ -20,7 +20,8 @@
    })
 
 (defschema PlayerParams
-  {:name s/Str :pronouns s/Str})
+  {:name s/Str :pronouns s/Str
+   s/Keyword s/Str})
 
 (defn ->Player :- Player
   "Create a new Player object."

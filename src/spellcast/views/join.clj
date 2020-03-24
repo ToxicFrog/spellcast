@@ -17,16 +17,6 @@
                  (form/submit-button "Join Game"))])
 
 
-(defn post [request]
-  (let [session (request :session)
-        params (request :params)]
-    (game/add-player! params)
-    (game/log! {:player (params :name)}
-      :all "{{player}} has joined the game.")
-    (-> (r/redirect "/game" 303)
-        (assoc :session session)
-        (assoc-in [:session :name] (params :name)))))
-
 (defn page [request]
   (html5
     [:head

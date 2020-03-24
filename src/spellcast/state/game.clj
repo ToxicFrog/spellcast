@@ -61,7 +61,7 @@
     (throw (IllegalArgumentException. (str "A player named " (player :name) " is already in the arena.")))
     (assoc-in world [:players (player :name)] player)))
 
-(defn get-player :- Player
+(defn get-player :- (s/maybe Player)
   "Return a player with the given name, or nil."
   [world :- Game, name :- s/Str]
   (get-in world [:players name]))

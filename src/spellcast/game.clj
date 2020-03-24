@@ -14,9 +14,6 @@
 (defn state [] @world)
 (defn reset-game! [] (reset! world (->Game SETTINGS)))
 
-(defn add-player! [params :- PlayerParams]
-  (swap! world game/add-player (->Player params (-> @world :settings :max-hp))))
-
 (defn get-log :- [s/Str]
   [name :- s/Str]
   (game/get-log @world name))
@@ -27,7 +24,7 @@
   [bindings :- {s/Keyword s/Any}, & rest]
   (apply swap! world logging/log bindings rest))
 
-(defn dispatch-event! :- {s/Keyword s/Any}
+(defn dispatch-event! :- (s/cond-pre s/Str {s/Keyword s/Any})
   [& rest]
   (let [response (atom nil)]
     (swap! world
@@ -35,5 +32,4 @@
         (let [[world' response'] (apply event/dispatch world rest)]
           (reset! response response')
           world')))
-    (println "response:" @response)
     @response))

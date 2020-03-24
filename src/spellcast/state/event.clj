@@ -2,23 +2,29 @@
   "Dispatcher for event handling."
   (:require
     [spellcast.state.game :as game :refer [Game GameState]]
+    [ring.util.response :as r]
     [schema.core :as s :refer [def defn defschema defmethod fn]]))
 
 (defschema Params {s/Keyword s/Str})
 (defschema Response {s/Any s/Any})
-(defschema EventResult (s/pair Response "world" Response "response"))
+(defschema EventResult (s/pair Response "world"
+                               (s/cond-pre s/Str Response) "response"))
 
 (defmulti dispatch
   (fn dispatcher ; :- (s/pair GameState "state" s/Keyword "event")
 ;    [world :- Game, player :- s/Str, params :- (s/optional Params "params"), & rest]
-    [world, player, params, & rest]
-    [(world :state) (-> params :evt keyword)]))
+    [world player request & rest]
+    (println "DISPATCH" [(world :state) (-> request :params :evt keyword)])
+    [(world :state) (-> request :params :evt keyword)]))
 
 (defmethod dispatch :default :- EventResult
-  ([world player params]
-   [world {:status 200 :body (str "bad request: " params)}])
-  ([world player params body]
-   [world {:status 200 :body (str "bad request: " params " // " body)}]))
+  ([world player request]
+   [world (-> (str "bad request: " (request :params) "\n"
+                   "world state is " world "\n"
+                   "full request is " request)
+              (r/response)
+              (r/content-type "text/plain"))])
+  ([world player request body] (dispatch world player request)))
 
 ; We can do multiple dispatch on [gamestate action] pairs
 ; So, each gamestate does something like:
