@@ -1,9 +1,11 @@
 (ns spellcast.state.event
   "Dispatcher for event handling."
+  (:refer-clojure :exclude [def defn defmethod defrecord fn letfn])
+  (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
+  (:require [clojure.pprint :refer [pprint]])
   (:require
-    [spellcast.state.game :as game :refer [Game GameState]]
     [ring.util.response :as r]
-    [schema.core :as s :refer [def defn defschema defmethod fn]]))
+    ))
 
 (defschema Params {s/Keyword s/Str})
 (defschema Response {s/Any s/Any})
@@ -11,20 +13,21 @@
                                (s/cond-pre s/Str Response) "response"))
 
 (defmulti dispatch
-  (fn dispatcher ; :- (s/pair GameState "state" s/Keyword "event")
+  (fn dispatcher
+   ; :- (s/pair GameState "state" s/Keyword "event")
 ;    [world :- Game, player :- s/Str, params :- (s/optional Params "params"), & rest]
-    [world player request & rest]
+    [world _player request & _body]
     (println "DISPATCH" [(world :state) (-> request :params :evt keyword)])
     [(world :state) (-> request :params :evt keyword)]))
 
 (defmethod dispatch :default :- EventResult
-  ([world player request]
+  ([world _player request]
    [world (-> (str "bad request: " (request :params) "\n"
                    "world state is " world "\n"
                    "full request is " request)
               (r/response)
               (r/content-type "text/plain"))])
-  ([world player request body] (dispatch world player request)))
+  ([world player request _body] (dispatch world player request)))
 
 ; We can do multiple dispatch on [gamestate action] pairs
 ; So, each gamestate does something like:

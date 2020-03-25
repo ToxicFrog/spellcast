@@ -1,0 +1,19 @@
+#!/usr/bin/env zsh
+
+REPLACER='
+local boilerplate = [=[
+  (:refer-clojure :exclude [def defn defmethod defrecord fn letfn])
+  (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
+  (:require [clojure.pprint :refer [pprint]])
+]=]
+local fd = io.open(file, "r+b")
+local data = fd:read("*a")
+fd:seek("set", 0)
+fd:write((data:gsub("  %(:refer%-clojure.-(  %(:require\n)", boilerplate.."%1")))
+fd:close()
+'
+
+find src -name '*.clj' | while read file; do
+  echo $file
+  lua -e "file='$file'" -e $REPLACER
+done

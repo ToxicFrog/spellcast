@@ -1,5 +1,12 @@
 (ns spellcast.state.player
-  (:require [schema.core :as s :refer [def defn defschema fn]]))
+  (:refer-clojure :exclude [def defn defmethod defrecord fn letfn])
+  (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
+  (:require [clojure.pprint :refer [pprint]])
+  (:require
+    ; we don't need any other requires, but we need the (:require$ for the
+    ; boilerplate inserter
+    [schema.core]
+    ))
 
 (defschema Pronouns
   (s/enum :they :she :he :it))

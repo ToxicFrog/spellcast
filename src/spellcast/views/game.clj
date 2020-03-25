@@ -1,9 +1,11 @@
 (ns spellcast.views.game
-  (:require [hiccup.page :refer [html5 include-css include-js]]
-            [hiccup.form :as form]
-            [ring.util.response :as r]
-            [spellcast.game :as game]
-            ))
+  (:refer-clojure :exclude [def defn defmethod defrecord fn letfn])
+  (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
+  (:require [clojure.pprint :refer [pprint]])
+  (:require
+    [hiccup.page :refer [html5 include-css include-js]]
+    [spellcast.game :as game]
+    ))
 
 (comment
   "
@@ -39,7 +41,8 @@
      [:tr
       (for [p players] [:td (gesture-table-for-player p)])]]))
 
-(defn page [{:keys [:session] :as request}]
+; This could probably be static HTML?
+(defn page [_]
   (html5
     [:head
      [:title "Spellcast"]

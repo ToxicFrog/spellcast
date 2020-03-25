@@ -1,8 +1,11 @@
 (ns spellcast.logging
-  (:require [antlers.core :refer [render-string]]
-            [spellcast.state.game :refer [Game add-log]]
-            [schema.core :as s :refer [def defn defschema fn]]
-            [clojure.set :refer [difference]]))
+  (:refer-clojure :exclude [def defn defmethod defrecord fn letfn])
+  (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
+  (:require [clojure.pprint :refer [pprint]])
+  (:require
+    [antlers.core :refer [render-string]]
+    [spellcast.state.game :refer [Game add-log]]
+    ))
 
 (def pronouns-map
   {:they {:sub "they" :obj "them" :pos "their" :ref "themself"}
@@ -36,11 +39,9 @@
          (map (fn [[dst msg]] [dst (render-msg bindings msg)]))
          (reduce log-one world))))
 
-(comment
-  ; Example usage
-  (log {:p1 caster :p2 target :hands "the left hand"}
-    :all "{{p1 :name}} casts Magic Missile (with {{hands}}) at {{p2 :name}}."
-    caster "Your missile shatters on {{p2 :name}}'s shield."
-    target "The missile shatters on your shield."
-    :else "The missile shatters on {{p2 :name}}'s shield.")
-  )
+ ; ; Example usage
+ ; (log {:p1 caster :p2 target :hands "the left hand"}
+ ;   :all "{{p1 :name}} casts Magic Missile (with {{hands}}) at {{p2 :name}}."
+ ;   caster "Your missile shatters on {{p2 :name}}'s shield."
+ ;   target "The missile shatters on your shield."
+ ;   :else "The missile shatters on {{p2 :name}}'s shield.")

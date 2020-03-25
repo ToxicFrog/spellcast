@@ -1,9 +1,12 @@
 (ns spellcast.views.join
-  (:require [hiccup.page :refer [html5 include-css include-js]]
-            [hiccup.form :as form]
-            [ring.util.response :as r]
-            [spellcast.game :as game]
-            ))
+  (:refer-clojure :exclude [def defn defmethod defrecord fn letfn])
+  (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
+  (:require [clojure.pprint :refer [pprint]])
+  (:require
+    [hiccup.form :as form]
+    [hiccup.page :refer [html5 include-css]]
+    [ring.util.response :as r]
+    ))
 
 (defn- join-form []
   [:body
@@ -26,7 +29,7 @@
       ; If they're already logged in just point them at the game in progress.
       (-> request :session :name string?) (r/redirect "/")
       ; If there's no room don't even show them the join form.
-      false nil
+      ; false nil
       ; If they aren't logged in and the game isn't full, let them in.
       (-> request :session :name nil?) (join-form)
-      :default (-> (r/response "Internal error in /game/join") (r/status 500)))))
+      :else (-> (r/response "Internal error in /game/join") (r/status 500)))))

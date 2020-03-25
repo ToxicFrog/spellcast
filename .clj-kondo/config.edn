@@ -1,0 +1,11 @@
+{:linters
+ {:unsorted-required-namespaces {:level :warning}
+  :unused-namespace {:exclude [schema.core clojure.pprint]}
+  :unused-referred-var {:exclude {clojure.pprint [pprint]
+                                  schema.core [def defn defmethod defrecord defschema fn letfn]}}
+  ; :unresolved-namespace {:level :off}
+  :use {:level :off}}
+ ; :lint-as
+ ; {user/ns+ clojure.core/ns
+  ; spellcast.state.game/defschema clojure.core/def}
+ }

@@ -5,7 +5,7 @@
             :url  "http://www.apache.org/licenses/"
             :distribution :repo}
   :min-lein-version "2.4.0"
-  :global-vars {*warn-on-reflection* true
+  :global-vars {*warn-on-reflection* false
                 *assert* true}
 
   :dependencies [[org.clojure/clojure "1.10.0"]

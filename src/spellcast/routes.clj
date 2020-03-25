@@ -1,23 +1,24 @@
-(require '[io.aviso.repl])
+(require 'clojure.spec.alpha 'expound.alpha 'io.aviso.repl)
 (io.aviso.repl/install-pretty-exceptions)
+(set! clojure.spec.alpha/*explain-out* expound.alpha/printer)
 
 (ns spellcast.routes
-  (:require [compojure.core :refer [defroutes routes GET POST]]
-            [compojure.coercions :refer [as-int]]
-            [schema.core :as s]
-            [spellcast.views.join :as views.join]
-            [spellcast.views.game :as views.game]
-            [hiccup.middleware :refer [wrap-base-url]]
-            [hiccup.util :refer [escape-html]]
-            [ring.util.request :as rq]
-            [clojure.pprint]
-            [compojure.handler :as handler]
-            [compojure.route :as route]
-            [spellcast.game :as game]
-            [clojure.string :as string]
-            [spellcast.phase.pregame]
-            [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
-            [ring.util.response :as r]))
+  (:refer-clojure :exclude [def defn defmethod defrecord fn letfn])
+  (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
+  (:require [clojure.pprint :refer [pprint]])
+  (:require
+    [clojure.string :as string]
+    [compojure.core :refer [defroutes routes GET POST]]
+    [compojure.route :as route]
+    [hiccup.middleware :refer [wrap-base-url]]
+    [io.aviso.repl]
+    [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
+    [ring.util.request :as rq]
+    [ring.util.response :as r]
+    [spellcast.game :as game]
+    [spellcast.phase.pregame]
+    [spellcast.views.game :as views.game]
+    ))
 
 (defn init []
   (println "spellcast is starting")
@@ -32,7 +33,7 @@
 (defn- logged-in [request]
   (get-in request [:session :name]))
 
-(defn- debuglog [val] (println val) val)
+; (defn- debuglog [val] (println val) val)
 
 (defroutes app-routes
   (GET "/" request
@@ -42,8 +43,8 @@
   (GET "/game" request (views.game/page request))
   (GET "/debug/state" request
        (str "<pre>"
-         (with-out-str (clojure.pprint/pprint (request :session)))
-         (with-out-str (clojure.pprint/pprint (game/state)))
+         (with-out-str (pprint (request :session)))
+         (with-out-str (pprint (game/state)))
          "</pre>"))
   (GET "/debug/reset" request
        (game/reset-game!)
@@ -52,7 +53,7 @@
         :body ""
         :session nil
         :cookies (->> (request :cookies)
-                      (map (fn [[k v]] [k {:value "" :max-age 0}]))
+                      (map (fn [[k _]] [k {:value "" :max-age 0}]))
                       (into {}))})
   (GET "/game/:evt" [evt :as request]
        (game/dispatch-event! (logged-in request) request))
@@ -61,9 +62,9 @@
   (route/resources "/")
   (route/not-found "Not Found"))
 
-(defn wrap-session-debug [handler]
+(defn wrap-session-debug [next-handler]
   (fn [request]
-    (let [response (handler request)]
+    (let [response (next-handler request)]
       (println (request :request-method) (request :uri))
       (println ">>" (request :session))
       (println "<<" (response :session))
@@ -71,7 +72,7 @@
       (println "")
       response)))
 
-(defn wrap-session-redirect [handler]
+(defn wrap-session-redirect [next-handler]
   (fn [request]
     (let [joined (-> request :session :name some?)
           uri (request :uri)]
@@ -86,7 +87,7 @@
         (and joined (= "/game/join" uri))
         {:status 302 :headers {"Location" "/game"} :body ""}
         ; Everything else falls through to the rest of the handlers.
-        :else (handler request)))))
+        :else (next-handler request)))))
 
 (def app
   (-> (routes app-routes)

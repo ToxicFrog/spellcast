@@ -1,7 +1,10 @@
 (ns spellcast.state.game
+  (:refer-clojure :exclude [def defn defmethod defrecord fn letfn])
+  (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
+  (:require [clojure.pprint :refer [pprint]])
   (:require
     [spellcast.state.player :as player :refer [Player]]
-    [schema.core :as s :refer [def defn defschema fn]]))
+    ))
 
 (defschema LogFilter
   (s/cond-pre
