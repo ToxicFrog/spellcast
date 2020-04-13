@@ -5,11 +5,12 @@
   (:require [clojure.pprint :refer [pprint]])
   (:require
     [ring.util.response :as r]
+    [spellcast.state.game :refer [Game]]
     ))
 
 (defschema Params {s/Keyword s/Str})
 (defschema Response {s/Any s/Any})
-(defschema EventResult (s/pair Response "world"
+(defschema EventResult (s/pair Game "world"
                                (s/cond-pre s/Str Response) "response"))
 
 (defmulti dispatch

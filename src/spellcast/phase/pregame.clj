@@ -7,35 +7,29 @@
     [clojure.string :as string]
     [ring.util.response :as r]
     [spellcast.logging :refer [log]]
+    [spellcast.phase.common :as phase-common]
     [spellcast.state.event :refer [dispatch]]
     [spellcast.state.game :as game]
     [spellcast.state.player :as player :refer [->Player]]
     [spellcast.views.join :as views.join]
     ))
 
-; This should be pulled into a common function that is used in all phases, since
-; chatting is allowed at all times.
+; Chat handlers common to all phases.
 (defmethod dispatch [:pregame :log]
-  ([world player _]
-   (as-> world $
-         (game/get-log $ player)
-         (string/join "<br>\n" $)
-         (r/response $)
-         (r/content-type $ "text/html")
-         [world $]))
-  ([world player _ body]
-   (as-> world $
-         (log $ {:name player :text body}
-           player "You say, \"{{text}}\""
-           :else "{{name}} says, \"{{text}}\"")
-         [$ (r/response nil)])))
+  ([world player _] (phase-common/get-log world player))
+  ([world player _ body] (phase-common/post-log world player body)))
 
-(defn join-error [world player]
+
+(defn- join-error [world player]
   (cond
     (= 2 (count (world :players))) "The game is full."
     (game/get-player world (player :name)) "A player with that name is already in the game."
     :else nil))
 
+(defn- check-phase-exit [world]
+  (if (= (-> world :players count) (-> world :settings :max-players))
+    (assoc world :phase :ingame)
+    world))
 
 (defmethod dispatch [:pregame :join]
   ; On GET serve the "join game" page.
@@ -54,7 +48,8 @@
        [(-> world
             (game/add-player player)
             (log {:player (player :name)}
-              :all "{{player}} has joined the game."))
+              :all "{{player}} has joined the game.")
+            check-phase-exit)
         (-> (r/redirect "/game" 303)
             (assoc :session session)
             (assoc-in [:session :name] (-> request :params :name)))]))))

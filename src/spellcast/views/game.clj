@@ -41,7 +41,6 @@
      [:tr
       (for [p players] [:td (gesture-table-for-player p)])]]))
 
-; This could probably be static HTML?
 (defn page [_]
   (html5
     [:head
