@@ -4,13 +4,11 @@
   (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
   (:require [clojure.pprint :refer [pprint]])
   (:require
-    [clojure.string :as string]
     [ring.util.response :as r]
+    [spellcast.data.game :as game]
+    [spellcast.data.player :as player :refer [->Player]]
     [spellcast.logging :refer [log]]
-    [spellcast.phase.common :as phase-common]
-    [spellcast.state.event :refer [dispatch]]
-    [spellcast.state.game :as game]
-    [spellcast.state.player :as player :refer [->Player]]
+    [spellcast.phase.common :as phase-common :refer [dispatch]]
     [spellcast.views.join :as views.join]
     ))
 

@@ -1,11 +1,12 @@
-(ns spellcast.game
+(ns spellcast.world
+  "The atom holding the game state, and functions to manipulate it."
   (:refer-clojure :exclude [def defn defmethod defrecord fn letfn])
   (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
   (:require [clojure.pprint :refer [pprint]])
   (:require
+    [spellcast.data.game :as game :refer [Game ->Game]]
     [spellcast.logging :as logging]
-    [spellcast.state.event :as event]
-    [spellcast.state.game :as game :refer [Game ->Game]]
+    [spellcast.phase.common :refer [dispatch]]
     ))
 
 (def SETTINGS {:max-players 2 :max-hp 15})
@@ -31,7 +32,7 @@
   (let [response (atom nil)]
     (swap! world
       (fn event-swapper [world]
-        (let [[world' response'] (apply event/dispatch world rest)]
+        (let [[world' response'] (apply dispatch world rest)]
           (reset! response response')
           world')))
     @response))

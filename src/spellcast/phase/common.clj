@@ -6,11 +6,30 @@
   (:require
     [clojure.string :as string]
     [ring.util.response :as r]
+    [spellcast.data.game :as game :refer [Game]]
     [spellcast.logging :refer [log]]
-    [spellcast.state.event :refer [EventResult]]
-    [spellcast.state.game :as game :refer [Game]]
-    [spellcast.state.player :refer [Player]]
     ))
+
+(defschema Params {s/Keyword s/Str})
+(defschema Response {s/Any s/Any})
+(defschema EventResult
+  (s/pair Game "world"
+          (s/cond-pre s/Str Response) "response"))
+
+(defmulti dispatch
+  (fn dispatcher
+    [world _player request & _body]
+    (println "DISPATCH" [(world :phase) (-> request :params :evt keyword)])
+    [(world :phase) (-> request :params :evt keyword)]))
+
+(defmethod dispatch :default :- EventResult
+  ([world _player request]
+   [world (-> (str "bad request: " (request :params) "\n"
+                   "world state is " world "\n"
+                   "full request is " request)
+              (r/response)
+              (r/content-type "text/plain"))])
+  ([world player request _body] (dispatch world player request)))
 
 (defn get-log
   "Return the game log as viewed by the given player."

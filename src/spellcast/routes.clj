@@ -1,6 +1,6 @@
 (require 'clojure.spec.alpha 'expound.alpha 'io.aviso.repl)
 (io.aviso.repl/install-pretty-exceptions)
-(set! clojure.spec.alpha/*explain-out* expound.alpha/printer)
+; (set! clojure.spec.alpha/*explain-out* expound.alpha/printer)
 
 (ns spellcast.routes
   (:refer-clojure :exclude [def defn defmethod defrecord fn letfn])
@@ -15,7 +15,7 @@
     [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
     [ring.util.request :as rq]
     [ring.util.response :as r]
-    [spellcast.game :as game]
+    [spellcast.world :as game]
     [spellcast.phase.pregame]
     [spellcast.views.game :as views.game]
     ))

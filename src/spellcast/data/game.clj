@@ -1,9 +1,9 @@
-(ns spellcast.state.game
+(ns spellcast.data.game
   (:refer-clojure :exclude [def defn defmethod defrecord fn letfn])
   (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
   (:require [clojure.pprint :refer [pprint]])
   (:require
-    [spellcast.state.player :as player :refer [Player]]
+    [spellcast.data.player :as player :refer [Player]]
     ))
 
 (defschema LogFilter
@@ -20,12 +20,13 @@
   {:max-players (s/constrained s/Int (partial < 1))
    :max-hp (s/constrained s/Int pos?)})
 
-(defschema GameState
+(defschema GamePhase
+  "Which phase of the game we're in, which in turn determines which events are legal from players and how they are handled."
   (s/enum
     ; waiting for all players to connect; ends by placing all players in the
     ; arena and moving to ingame
     :pregame
-    ; test state that arbitrarily picks a winner and then moves to postgame
+    ; test phase that arbitrarily picks a winner and then moves to postgame
     :ingame
     ; permits viewing the log and talking but not entering any actions
     :postgame
@@ -34,7 +35,7 @@
 (defschema Game
   {:players {s/Str Player}
    :settings GameSettings
-   :state GameState
+   :phase GamePhase
    :log [LogMessage]})
 
 (defn ->Game :- Game
@@ -42,7 +43,7 @@
   [settings :- GameSettings]
   {:players {}
    :settings settings
-   :state :pregame
+   :phase :pregame
    :log []})
 
 (defn add-log :- Game

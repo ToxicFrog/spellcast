@@ -4,7 +4,7 @@
   (:require [clojure.pprint :refer [pprint]])
   (:require
     [antlers.core :refer [render-string]]
-    [spellcast.state.game :refer [Game add-log]]
+    [spellcast.data.game :refer [Game add-log]]
     ))
 
 (def pronouns-map

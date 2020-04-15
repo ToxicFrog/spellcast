@@ -4,7 +4,7 @@
   (:require [clojure.pprint :refer [pprint]])
   (:require
     [hiccup.page :refer [html5 include-css include-js]]
-    [spellcast.game :as game]
+    [spellcast.world :as game]
     ))
 
 (comment
