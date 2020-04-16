@@ -22,7 +22,11 @@
                      |subtable for questions
   ")
 
-
+; TODO the gesture grid is transmitted to the client when /game is fetched. This is
+; wrong in at least two ways: first, the current player isn't guaranteed to be
+; leftmost in the grid, and second, when another player joins everyone else needs
+; to refresh the page to get the updated grid. The grid should be constructed in JS
+; based on the current state of the game.
 (defn gesture-table-for-player [name]
   [:table.gestures
    [:tr [:th {:colspan 2} name]]

@@ -21,6 +21,11 @@
   {:name s/Str
    :pronouns Pronouns
    :hp s/Int
+   ; TODO right now this just displays unconditionally, but in practice each turn
+   ; of gestures needs to be annotated with who it's visible to; gestures currently
+   ; being entered are visible only to the owner until the collect-gestures phase
+   ; is over, gestures made while invisible are only ever visible to the owner,
+   ; gestures are never visible to someone who was blind when they were being made, etc
    :left (s/constrained [Gesture] #(= 8 (count %)))
    :right (s/constrained [Gesture] #(= 8 (count %)))
    ; :status s/Any ; status effects -- map from effect to duration?

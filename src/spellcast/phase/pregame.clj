@@ -24,9 +24,20 @@
     (game/get-player world (player :name)) "A player with that name is already in the game."
     :else nil))
 
+(defn- enter-arena [world player]
+  (log world {:player player}
+    (player :name) "You advance confidently into the arena. The referee casts the formal Dispel Magic and Anti-Spell on you..."
+    :else "{{name player}} strides defiantly into the arena. The referre casts the formal Dispel Magic and Anti-Spell on {{pronoun player :obj}}..."))
+
+(defn- game-start [world]
+  (let [players (-> world :players vals)]
+    (as-> world $
+          (assoc $ :phase :ingame)
+          (reduce enter-arena $ players))))
+
 (defn- check-phase-exit [world]
   (if (= (-> world :players count) (-> world :settings :max-players))
-    (assoc world :phase :ingame)
+    (game-start world)
     world))
 
 (defmethod dispatch [:pregame :join]

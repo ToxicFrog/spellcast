@@ -15,9 +15,9 @@
     [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
     [ring.util.request :as rq]
     [ring.util.response :as r]
-    [spellcast.world :as game]
-    [spellcast.phase.pregame]
+    [spellcast.phase.all]
     [spellcast.views.game :as views.game]
+    [spellcast.world :as game]
     ))
 
 (defn init []
