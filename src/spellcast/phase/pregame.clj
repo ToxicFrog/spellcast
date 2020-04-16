@@ -24,21 +24,15 @@
     (game/get-player world (player :name)) "A player with that name is already in the game."
     :else nil))
 
-(defn- enter-arena [world player]
-  (log world {:player player}
-    (player :name) "You advance confidently into the arena. The referee casts the formal Dispel Magic and Anti-Spell on you..."
-    :else "{{name player}} strides defiantly into the arena. The referre casts the formal Dispel Magic and Anti-Spell on {{pronoun player :obj}}..."))
-
-(defn- game-start [world]
-  (let [players (-> world :players vals)]
-    (as-> world $
-          (assoc $ :phase :ingame)
-          (reduce enter-arena $ players))))
-
 (defn- check-phase-exit [world]
   (if (= (-> world :players count) (-> world :settings :max-players))
-    (game-start world)
+    (assoc world :phase :ingame)
     world))
+
+(defmethod dispatch [:pregame :BEGIN]
+  ([world _]
+   (println "Entering pregame phase...")
+   world))
 
 (defmethod dispatch [:pregame :join]
   ; On GET serve the "join game" page.
@@ -62,3 +56,8 @@
         (-> (r/redirect "/game" 303)
             (assoc :session session)
             (assoc-in [:session :name] (-> request :params :name)))]))))
+
+(defmethod dispatch [:pregame :END]
+  ([world _]
+   (println "Leaving pregame phase...")
+   world))

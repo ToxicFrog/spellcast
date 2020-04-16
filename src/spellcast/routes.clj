@@ -66,17 +66,16 @@
   (fn [request]
     (let [response (next-handler request)]
       (println (request :request-method) (request :uri))
-      (println ">>" (request :session))
-      (println "<<" (response :session))
-      (println "==" (str (game/state)))
-      (println "")
+      ; (println ">>" (request :session))
+      ; (println "<<" (response :session))
+      ; (println "==" (str (game/state)))
+      ; (println "")
       response)))
 
 (defn wrap-session-redirect [next-handler]
   (fn [request]
     (let [joined (-> request :session :name some?)
           uri (request :uri)]
-      (println "wrap-redirect" joined uri)
       (cond
         ; If they aren't logged in, redirect anything in /game to /join/game
         (and (not joined)

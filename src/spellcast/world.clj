@@ -34,5 +34,9 @@
       (fn event-swapper [world]
         (let [[world' response'] (apply dispatch world rest)]
           (reset! response response')
-          world')))
+          (if (= (world :phase) (world' :phase))
+            world'
+            (-> world'
+                (dispatch [(world :phase) :END])
+                (dispatch [(world' :phase) :BEGIN]))))))
     @response))

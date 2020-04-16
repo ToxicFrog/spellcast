@@ -18,9 +18,11 @@
 
 (defmulti dispatch
   (fn dispatcher
-    [world _player request & _body]
-    (println "DISPATCH" [(world :phase) (-> request :params :evt keyword)])
-    [(world :phase) (-> request :params :evt keyword)]))
+    ([world _player request & _body]
+     (println "DISPATCH" [(world :phase) (-> request :params :evt keyword)])
+     [(world :phase) (-> request :params :evt keyword)])
+    ([world [phase event]]
+     [phase event])))
 
 (defmethod dispatch :default :- EventResult
   ([world _player request]

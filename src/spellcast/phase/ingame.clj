@@ -16,3 +16,34 @@
   ([world player _] (phase-common/get-log world player))
   ([world player _ body] (phase-common/post-log world player body)))
 
+(defn- enter-arena [world player]
+  (log world {:player player}
+    (player :name) "You advance confidently into the arena. The referee casts the formal Dispel Magic and Anti-Spell on you..."
+    :else "{{name player}} strides defiantly into the arena. The referee casts the formal Dispel Magic and Anti-Spell on {{pronoun player :obj}}..."))
+
+(defn- game-start [world]
+  (let [players (-> world :players vals)]
+    (reduce enter-arena world players)))
+
+(defn- test-game-resolution [world]
+  (pprint world)
+  (let [players (world :players)
+        n (rand-int (count players))
+        [_ winner] (-> players seq (nth n))]
+    (-> world
+        (log {:winner winner}
+          :all "The duel begins! It is very impressive, but you can neither see nor participate in it, because that part of the server isn't implemented yet."
+          :all "When the dust clears, however, only one wizard is left standing..."
+          (winner :name) "<b>*** You are victorious! ***</b>"
+          :else "<b>*** {{name winner}} is victorious! ***</b>")
+        (assoc :phase :postgame))))
+
+(defmethod dispatch [:ingame :BEGIN]
+  ([world _]
+   (println "Entering ingame phase...")
+   (test-game-resolution (game-start world))))
+
+(defmethod dispatch [:ingame :END]
+  ([world _]
+   (println "Leaving ingame phase...")
+   world))
