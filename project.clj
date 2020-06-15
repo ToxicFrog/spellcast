@@ -17,6 +17,7 @@
                  [ring "1.8.0"]
                  [prismatic/schema "1.1.12"]
                  [caribou/antlers "0.6.1"]
+                 [slingshot "0.12.2"]
                  ]
   :plugins [[lein-ring "0.12.5"]
             [io.aviso/pretty "0.1.37"]]

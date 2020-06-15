@@ -17,6 +17,8 @@
     [ring.util.response :as r]
     [spellcast.phase.all]
     [spellcast.views.game :as views.game]
+    [spellcast.views.join :as views.join]
+    [spellcast.views.log :as views.log]
     [spellcast.world :as game]
     ))
 
@@ -36,11 +38,21 @@
 ; (defn- debuglog [val] (println val) val)
 
 (defroutes app-routes
+  ; Redirect logged-in users to /game, logged-out users to /join
   (GET "/" request
        (cond
          (logged-in request) (r/redirect "/game")
-         :else (r/redirect "/game/join")))
-  (GET "/game" request (views.game/page request))
+         :else (r/redirect "/join")))
+  ; Display the join-game page, or handle a join request
+  (GET "/join" request (views.join/get request))
+  (POST "/join" request (views.join/post request))
+  ; Getters for the in-game UI and game data.
+  (GET "/game" request (views.game/page request (logged-in request)))
+  (GET "/log" request (views.log/page request (logged-in request)))
+  ; Event receptor
+  (POST "/game/:evt" [evt :as request]
+       (game/POST! (logged-in request) request (rq/body-string request)))
+  ; Debug handlers
   (GET "/debug/state" request
        (str "<pre>"
          (with-out-str (pprint (request :session)))
@@ -48,17 +60,14 @@
          "</pre>"))
   (GET "/debug/reset" request
        (game/reset-game!)
-       {:status 302
-        :headers {"Location" "/"}
-        :body ""
+       {:status 200
+        ; :headers {"Location" "/"}
+        :headers {"Content-type" "text/plain"}
+        :body "state reset"
         :session nil
         :cookies (->> (request :cookies)
                       (map (fn [[k _]] [k {:value "" :max-age 0}]))
                       (into {}))})
-  (GET "/game/:evt" [evt :as request]
-       (game/dispatch-event! (logged-in request) request))
-  (POST "/game/:evt" [evt :as request]
-       (game/dispatch-event! (logged-in request) request (rq/body-string request)))
   (route/resources "/")
   (route/not-found "Not Found"))
 
@@ -67,7 +76,7 @@
     (let [response (next-handler request)]
       (println (request :request-method) (request :uri))
       ; (println ">>" (request :session))
-      ; (println "<<" (response :session))
+      (println "<<" (dissoc response :headers))
       ; (println "==" (str (game/state)))
       ; (println "")
       response)))
@@ -77,21 +86,22 @@
     (let [joined (-> request :session :name some?)
           uri (request :uri)]
       (cond
-        ; If they aren't logged in, redirect anything in /game to /join/game
-        (and (not joined)
-          (string/starts-with? uri "/game")
-          (not= "/game/join" uri))
-        {:status 302 :headers {"Location" "/game/join"} :body ""}
-        ; If they are logged in, don't let them access /game/join, bounce them to /game instead
-        (and joined (= "/game/join" uri))
+        ; If they aren't logged in, redirect anything in /game to /join
+        (string/starts-with? uri "/debug") (next-handler request)
+        (and
+          (not joined)
+          (not= "/join" uri))
+        {:status 302 :headers {"Location" "/join"} :body ""}
+        ; If they are logged in, don't let them access /join, bounce them to /game instead
+        (and joined (= "/join" uri))
         {:status 302 :headers {"Location" "/game"} :body ""}
         ; Everything else falls through to the rest of the handlers.
         :else (next-handler request)))))
 
 (def app
   (-> (routes app-routes)
-      (wrap-session-debug)
       (wrap-session-redirect)
+      (wrap-session-debug)
       (wrap-defaults
         (-> site-defaults
             (assoc-in [:session :cookie-name] "spellcast-session") ;(str "spellcast-" (System/currentTimeMillis)))

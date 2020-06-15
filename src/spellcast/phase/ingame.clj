@@ -8,13 +8,12 @@
     [clojure.string :as string]
     [ring.util.response :as r]
     [spellcast.logging :refer [log]]
-    [spellcast.phase.common :as phase-common :refer [dispatch]]
+    [spellcast.phase.common :as phase-common :refer [dispatch-event]]
     ))
 
 ; Chat handlers common to all phases.
-(defmethod dispatch [:ingame :log]
-  ([world player _] (phase-common/get-log world player))
-  ([world player _ body] (phase-common/post-log world player body)))
+(defmethod dispatch-event [:ingame :log]
+  [world player _ body] (phase-common/post-log world player body))
 
 (defn- enter-arena [world player]
   (log world {:player player}
@@ -38,12 +37,12 @@
           :else "<b>*** {{name winner}} is victorious! ***</b>")
         (assoc :phase :postgame))))
 
-(defmethod dispatch [:ingame :BEGIN]
-  ([world _]
-   (println "Entering ingame phase...")
+(defmethod dispatch-event [:ingame :BEGIN]
+  ([world _phase _event]
+   (println "Entering ingame phase..." _phase _event)
    (test-game-resolution (game-start world))))
 
-(defmethod dispatch [:ingame :END]
-  ([world _]
+(defmethod dispatch-event [:ingame :END]
+  ([world _phase _event]
    (println "Leaving ingame phase...")
    world))

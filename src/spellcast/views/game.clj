@@ -45,7 +45,7 @@
      [:tr
       (for [p players] [:td (gesture-table-for-player p)])]]))
 
-(defn page [_]
+(defn page [_request _player]
   (html5
     [:head
      [:title "Spellcast"]

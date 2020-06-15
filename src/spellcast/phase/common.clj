@@ -4,9 +4,9 @@
   (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
   (:require [clojure.pprint :refer [pprint]])
   (:require
-    [clojure.string :as string]
     [ring.util.response :as r]
-    [spellcast.data.game :as game :refer [Game]]
+    [slingshot.slingshot :refer [throw+]]
+    [spellcast.data.game :as game :refer [Game GamePhase]]
     [spellcast.logging :refer [log]]
     ))
 
@@ -16,32 +16,27 @@
   (s/pair Game "world"
           (s/cond-pre s/Str Response) "response"))
 
-(defmulti dispatch
-  (fn dispatcher
-    ([world _player request & _body]
-     (println "DISPATCH" [(world :phase) (-> request :params :evt keyword)])
-     [(world :phase) (-> request :params :evt keyword)])
-    ([world [phase event]]
-     [phase event])))
+(defn dispatcher :- [(s/one GamePhase "phase") (s/one s/Keyword "event-type")]
+  ([_world phase event] [phase event])
+  ([world _player request _body]
+    [(world :phase) (-> request :params :evt keyword)]))
 
-(defmethod dispatch :default :- EventResult
-  ([world _player request]
-   [world (-> (str "bad request: " (request :params) "\n"
-                   "world state is " world "\n"
-                   "full request is " request)
-              (r/response)
-              (r/content-type "text/plain"))])
-  ([world player request _body] (dispatch world player request)))
+(defmulti dispatch-event dispatcher)
 
-(defn get-log
-  "Return the game log as viewed by the given player."
-  [world :- Game, player :- s/Str] :- EventResult
-  (as-> world $
-        (game/get-log $ player)
-        (string/join "<br>\n" $)
-        (r/response $)
-        (r/content-type $ "text/html")
-        [world $]))
+(defmethod dispatch-event :default :- Game
+  ; Server tried to fire an event that there is no mapping for in the current
+  ; phase.
+  ([world _phase _event] world)
+  ; Client sent a request that the current game phase doesn't understand.
+  ([world _player request _body]
+   (println "Bad request:" request)
+   (-> (str "bad request: " (request :params) "\n"
+         "world state is " world "\n"
+         "full request is " request)
+       (r/response)
+       (r/status 400)
+       (r/content-type "text/plain")
+       (throw+))))
 
 (defn post-log
   "Add a chat message from the given player."
@@ -50,4 +45,4 @@
          (log $ {:name player :text body}
            player "You say, \"{{text}}\""
            :else "{{name}} says, \"{{text}}\"")
-         [$ (r/response nil)]))
+         $))

@@ -4,9 +4,11 @@
   (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
   (:require [clojure.pprint :refer [pprint]])
   (:require
+    [ring.util.response :as r]
+    [slingshot.slingshot :refer [try+]]
     [spellcast.data.game :as game :refer [Game ->Game]]
     [spellcast.logging :as logging]
-    [spellcast.phase.common :refer [dispatch]]
+    [spellcast.phase.common :as phase]
     ))
 
 (def SETTINGS {:max-players 2 :max-hp 15})
@@ -27,16 +29,31 @@
   [bindings :- {s/Keyword s/Any}, & rest]
   (apply swap! world logging/log bindings rest))
 
-(defn dispatch-event! :- (s/cond-pre s/Str {s/Keyword s/Any})
-  [& rest]
-  (let [response (atom nil)]
-    (swap! world
-      (fn event-swapper [world]
-        (let [[world' response'] (apply dispatch world rest)]
-          (reset! response response')
-          (if (= (world :phase) (world' :phase))
-            world'
-            (-> world'
-                (dispatch [(world :phase) :END])
-                (dispatch [(world' :phase) :BEGIN]))))))
-    @response))
+(defn- updater
+  [world f rest]
+  (println "updater" f (world :phase))
+  (let [world' (apply f world rest)]
+    (if (= (world :phase) (world' :phase))
+      world'
+      (-> world'
+          (phase/dispatch-event (world :phase) :END)
+          (phase/dispatch-event (world' :phase) :BEGIN)))))
+
+(defn update!
+  "Update the game state. Same signature as swap! except that the atom parameter is implicit.
+  If the swapping function returns a game state with a different phase than the original, also calls the phase exit and phase entry functions for the current and previous phases."
+  [f & rest] (swap! world updater f rest))
+
+(defn POST! :- (s/pred r/response?)
+  "Respond to a POST request from a player. The request handler must either:
+  - return a new game state, which is swapped in; the client gets 200
+  - throw a Response, which is returned to the client unaltered
+  - throw a String, which is wrapped in HTTP 500 and returned to the client
+  - throw anything else, which will produce an error page via the Ring error handler
+  In the latter three cases the world state is left unaltered."
+  [player request body]
+  (try+
+    (update! phase/dispatch-event player request body)
+    (r/response "")
+    (catch r/response? resp resp)
+    (catch string? s (-> (r/response s) (r/status 500)))))

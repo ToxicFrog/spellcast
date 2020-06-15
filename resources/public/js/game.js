@@ -1,5 +1,5 @@
 function refreshLog() {
-  fetch("/game/log", {credentials: "same-origin"})
+  fetch("/log", {credentials: "same-origin"})
   .then(function(response) {
     let log = document.getElementById('log');
     if (!response.ok) {
