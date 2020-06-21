@@ -8,7 +8,7 @@
     ))
 
 ; Chat handlers common to all phases.
-(defmethod dispatch-event [:pregame :log]
+(defmethod dispatch-event [:postgame :log]
   [world player _ body] (phase-common/post-log world player body))
 
 ; TODO: queries from the client about what the action button should say should

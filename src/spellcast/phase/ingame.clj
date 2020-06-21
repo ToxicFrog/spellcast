@@ -25,7 +25,7 @@
     (reduce enter-arena world players)))
 
 (defn- test-game-resolution [world]
-  (pprint world)
+  ; (pprint world)
   (let [players (world :players)
         n (rand-int (count players))
         [_ winner] (-> players seq (nth n))]

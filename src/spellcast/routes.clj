@@ -73,12 +73,9 @@
 
 (defn wrap-session-debug [next-handler]
   (fn [request]
+    (println ">>" (request :request-method) (request :uri) (request :session) (request :body))
     (let [response (next-handler request)]
-      (println (request :request-method) (request :uri))
-      ; (println ">>" (request :session))
       (println "<<" (dissoc response :headers))
-      ; (println "==" (str (game/state)))
-      ; (println "")
       response)))
 
 (defn wrap-session-redirect [next-handler]

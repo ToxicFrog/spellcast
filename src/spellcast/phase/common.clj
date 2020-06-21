@@ -17,8 +17,11 @@
           (s/cond-pre s/Str Response) "response"))
 
 (defn dispatcher :- [(s/one GamePhase "phase") (s/one s/Keyword "event-type")]
-  ([_world phase event] [phase event])
+  ([_world phase event]
+   (println "EVENT" phase event)
+   [phase event])
   ([world _player request _body]
+   (println "POST " (world :phase) (request :uri))
     [(world :phase) (-> request :params :evt keyword)]))
 
 (defmulti dispatch-event dispatcher)
