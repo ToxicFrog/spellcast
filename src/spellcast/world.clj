@@ -57,3 +57,22 @@
     (r/response "")
     (catch r/response? resp resp)
     (catch string? s (-> (r/response s) (r/status 500)))))
+
+(defn watch
+  "Watch the game state for changes. Given a function that extracts the interesting part of the game state and the hash of the old version, blocks until (-> @world key-fn hash) is different from the old hash value, then returns (key-fn @world)."
+  [key-fn old-hash]
+  (let [key (promise)
+        watcher (fn watcher [key _atom _val val']
+                  (when (not= old-hash (hash (key-fn val')))
+                    (deliver key val')
+                    (remove-watch world key)))]
+    (add-watch world key watcher)
+    ; Avoid race condition here -- it's possible that between watch being called
+    ; and the watch being added, the world got updated by another thread. So we
+    ; check here to see if the world got updated while we were setting the watch,
+    ; in which case we discard both the watch and the promise.
+    (if (not= old-hash (hash (key-fn @world)))
+      (do
+        (remove-watch world key)
+        (key-fn @world))
+      (key-fn @key))))

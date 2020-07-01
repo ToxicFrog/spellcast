@@ -8,6 +8,7 @@
   (:require [clojure.pprint :refer [pprint]])
   (:require
     [clojure.string :as string]
+    [compojure.coercions :refer [as-int]]
     [compojure.core :refer [defroutes routes GET POST]]
     [compojure.route :as route]
     [hiccup.middleware :refer [wrap-base-url]]
@@ -48,7 +49,8 @@
   (POST "/join" request (views.join/post request))
   ; Getters for the in-game UI and game data.
   (GET "/game" request (views.game/page request (logged-in request)))
-  (GET "/log" request (views.log/page request (logged-in request)))
+  (GET "/log/:index" [index :<< as-int :as request]
+       (views.log/page (logged-in request) index))
   ; Event receptor
   (POST "/game/:evt" [evt :as request]
        (game/POST! (logged-in request) request (rq/body-string request)))
@@ -75,7 +77,7 @@
   (fn [request]
     (println ">>" (request :request-method) (request :uri) (request :session) (request :body))
     (let [response (next-handler request)]
-      (println "<<" (dissoc response :headers))
+      (println "<<" response) ;(dissoc response :headers))
       response)))
 
 (defn wrap-session-redirect [next-handler]

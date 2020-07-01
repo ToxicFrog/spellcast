@@ -57,7 +57,7 @@
        [:td#chat-ui {:rowspan 3}
         [:table
          [:tr.header [:th "GAME LOG"]]
-         [:tr [:td [:div#log]]]
+         [:tr [:td [:div#log [:input#log-index {:type :hidden :value 0}]]]]
          [:tr [:td [:input#talk]]]]]
        [:td#gesture-ui (gesture-tables)]]
       [:tr

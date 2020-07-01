@@ -15,22 +15,22 @@
   (as-> (mock/request :get path) $
         (apply assoc $ :session session rest)
         (handler $)
-        ($ :session)))
+        ($ :session session)))
 
 (defn- post [session path & rest]
   (as-> (mock/request :post path) $
         (apply assoc $ :session session rest)
         (handler $)
-        ($ :session)))
+        ($ :session session)))
 
 (deftest integration-test
   (init)
   (-> {}
     (post "/join" :params {:name "Red" :pronouns "she"})
     (post "/game/log" :body "beep beep beep")
-    (get  "/log"))
+    (get  "/log/0"))
   (-> {}
     (post "/join" :params {:name "Blue" :pronouns "they"})
     (post "/game/log" :body "boop boop boop")
-    (get  "/log"))
+    (get  "/log/0"))
   )

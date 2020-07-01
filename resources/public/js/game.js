@@ -1,5 +1,6 @@
 function refreshLog() {
-  fetch("/log", {credentials: "same-origin"})
+  let n = document.getElementById('log-index').value;
+  fetch("/log/"+n, {credentials: "same-origin"})
   .then(function(response) {
     let log = document.getElementById('log');
     if (!response.ok) {
