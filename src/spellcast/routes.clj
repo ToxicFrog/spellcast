@@ -4,8 +4,11 @@
 
 (ns spellcast.routes
   (:refer-clojure :exclude [def defn defmethod defrecord fn letfn])
-  (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
   (:require [clojure.pprint :refer [pprint]])
+  (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
+  (:require [taoensso.timbre :as timbre
+             :refer [trace debug info warn error fatal
+                     tracef debugf infof warnf errorf fatalf]])
   (:require
     [clojure.string :as string]
     [compojure.coercions :refer [as-int]]
@@ -23,20 +26,41 @@
     [spellcast.world :as game]
     ))
 
+(def log-levels
+  {:trace  "TRC"
+   :debug  "DBG"
+   :info   "INF"
+   :warn   "WRN"
+   :error  "ERR"
+   :fatal  "FTL"
+   :report "RPT"})
+
+(timbre/merge-config!
+  {;:output-fn #(-> % :msg_ deref str)
+   :output-fn
+   (fn logger [data]
+     (let [{:keys [level #_vargs msg_ ?ns-str ?file
+                   timestamp_ ?line]} data]
+       (str
+         (log-levels level) " "
+         (force timestamp_) " "
+         "[" (or ?ns-str ?file "?") ":" (or ?line "?") "] - "
+         (force msg_)
+         )))
+   :timestamp-opts {:pattern "HH:mm:ss"}})
+
 (defn init []
-  (println "spellcast is starting")
+  (info "spellcast is starting")
   (io.aviso.repl/install-pretty-exceptions)
   (s/set-fn-validation! true)
   (game/reset-game!)
   (game/log! {} :all "Game starts."))
 
 (defn destroy []
-  (println "spellcast is shutting down"))
+  (info "spellcast is shutting down"))
 
 (defn- logged-in [request]
   (get-in request [:session :name]))
-
-; (defn- debuglog [val] (println val) val)
 
 (defroutes app-routes
   ; Redirect logged-in users to /game, logged-out users to /join
@@ -75,9 +99,9 @@
 
 (defn wrap-session-debug [next-handler]
   (fn [request]
-    (println ">>" (request :request-method) (request :uri) (request :session) (request :body))
+    (debug ">>" (request :request-method) (request :uri) (request :session) (request :body))
     (let [response (next-handler request)]
-      (println "<<" response) ;(dissoc response :headers))
+      (debug "<<" response) ;(dissoc response :headers))
       response)))
 
 (defn wrap-session-redirect [next-handler]

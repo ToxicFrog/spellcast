@@ -1,8 +1,11 @@
 (ns spellcast.world
   "The atom holding the game state, and functions to manipulate it."
   (:refer-clojure :exclude [def defn defmethod defrecord fn letfn])
-  (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
   (:require [clojure.pprint :refer [pprint]])
+  (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
+  (:require [taoensso.timbre :as timbre
+             :refer [trace debug info warn error fatal
+                     tracef debugf infof warnf errorf fatalf]])
   (:require
     [ring.util.response :as r]
     [slingshot.slingshot :refer [try+]]
@@ -31,13 +34,15 @@
 
 (defn- updater
   [world f rest]
-  (println "updater" f (world :phase))
+  (debug "updater" f (world :phase))
   (let [world' (apply f world rest)]
     (if (= (world :phase) (world' :phase))
       world'
-      (-> world'
+      (do
+        (info "Game state phase transition:" (world :phase) "->" (world' :phase))
+        (-> world'
           (phase/dispatch-event (world :phase) :END)
-          (phase/dispatch-event (world' :phase) :BEGIN)))))
+          (phase/dispatch-event (world' :phase) :BEGIN))))))
 
 (defn update!
   "Update the game state. Same signature as swap! except that the atom parameter is implicit.

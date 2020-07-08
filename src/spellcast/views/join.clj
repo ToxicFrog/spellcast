@@ -1,7 +1,10 @@
 (ns spellcast.views.join
   (:refer-clojure :exclude [def defn defmethod defrecord fn letfn])
-  (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
   (:require [clojure.pprint :refer [pprint]])
+  (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
+  (:require [taoensso.timbre :as timbre
+             :refer [trace debug info warn error fatal
+                     tracef debugf infof warnf errorf fatalf]])
   (:require
     [hiccup.form :as form]
     [hiccup.page :refer [html5 include-css]]
@@ -66,5 +69,5 @@
          (assoc :session
            (assoc session :name (-> request :params :name))))
      (catch string? err
-       (println err)
+       (error err)
        (-> err r/response (r/status 400))))))

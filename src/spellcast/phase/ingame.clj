@@ -2,8 +2,11 @@
   "Event handlers for ingame phase. This is the phase after all players have joined, where the actual dueling happens. It will probably eventually be split into multiple subphases, e.g. collect-gestures -> collect-answers -> execute.
   At the moment, it's just a test phase, and arbitrarily picks and player to win and then goes on to the postgame."
   (:refer-clojure :exclude [def defn defmethod defrecord fn letfn])
-  (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
   (:require [clojure.pprint :refer [pprint]])
+  (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
+  (:require [taoensso.timbre :as timbre
+             :refer [trace debug info warn error fatal
+                     tracef debugf infof warnf errorf fatalf]])
   (:require
     [clojure.string :as string]
     [ring.util.response :as r]
@@ -39,10 +42,8 @@
 
 (defmethod dispatch-event [:ingame :BEGIN]
   ([world _phase _event]
-   (println "Entering ingame phase..." _phase _event)
    (test-game-resolution (game-start world))))
 
 (defmethod dispatch-event [:ingame :END]
   ([world _phase _event]
-   (println "Leaving ingame phase...")
    world))

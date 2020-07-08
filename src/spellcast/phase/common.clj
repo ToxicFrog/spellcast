@@ -1,8 +1,11 @@
 (ns spellcast.phase.common
   "Common event handlers and utilities."
   (:refer-clojure :exclude [def defn defmethod defrecord fn letfn])
-  (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
   (:require [clojure.pprint :refer [pprint]])
+  (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
+  (:require [taoensso.timbre :as timbre
+             :refer [trace debug info warn error fatal
+                     tracef debugf infof warnf errorf fatalf]])
   (:require
     [ring.util.response :as r]
     [slingshot.slingshot :refer [throw+]]
@@ -18,10 +21,10 @@
 
 (defn dispatcher :- [(s/one GamePhase "phase") (s/one s/Keyword "event-type")]
   ([_world phase event]
-   (println "EVENT" phase event)
+   (debug "EVENT" phase event)
    [phase event])
   ([world _player request _body]
-   (println "POST " (world :phase) (request :uri))
+   (debug "POST " (world :phase) (request :uri))
     [(world :phase) (-> request :params :evt keyword)]))
 
 (defmulti dispatch-event dispatcher)
@@ -32,7 +35,7 @@
   ([world _phase _event] world)
   ; Client sent a request that the current game phase doesn't understand.
   ([world _player request _body]
-   (println "Bad request:" request)
+   (warn "Bad request:" request)
    (-> (str "bad request: " (request :params) "\n"
          "world state is " world "\n"
          "full request is " request)
