@@ -1,7 +1,3 @@
-(require 'clojure.spec.alpha 'expound.alpha 'io.aviso.repl)
-(io.aviso.repl/install-pretty-exceptions)
-; (set! clojure.spec.alpha/*explain-out* expound.alpha/printer)
-
 (ns spellcast.routes
   (:refer-clojure :exclude [def defn defmethod defrecord fn letfn])
   (:require [clojure.pprint :refer [pprint]])
@@ -15,7 +11,6 @@
     [compojure.core :refer [defroutes routes GET POST]]
     [compojure.route :as route]
     [hiccup.middleware :refer [wrap-base-url]]
-    [io.aviso.repl]
     [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
     [ring.util.request :as rq]
     [ring.util.response :as r]
@@ -23,41 +18,8 @@
     [spellcast.views.game :as views.game]
     [spellcast.views.join :as views.join]
     [spellcast.views.log :as views.log]
-    [spellcast.world :as game]
+    [spellcast.world :as world]
     ))
-
-(def log-levels
-  {:trace  "TRC"
-   :debug  "DBG"
-   :info   "INF"
-   :warn   "WRN"
-   :error  "ERR"
-   :fatal  "FTL"
-   :report "RPT"})
-
-(timbre/merge-config!
-  {;:output-fn #(-> % :msg_ deref str)
-   :output-fn
-   (fn logger [data]
-     (let [{:keys [level #_vargs msg_ ?ns-str ?file
-                   timestamp_ ?line]} data]
-       (str
-         (log-levels level) " "
-         (force timestamp_) " "
-         "[" (or ?ns-str ?file "?") ":" (or ?line "?") "] - "
-         (force msg_)
-         )))
-   :timestamp-opts {:pattern "HH:mm:ss"}})
-
-(defn init []
-  (info "spellcast is starting")
-  (io.aviso.repl/install-pretty-exceptions)
-  (s/set-fn-validation! true)
-  (game/reset-game!)
-  (game/log! {} :all "Game starts."))
-
-(defn destroy []
-  (info "spellcast is shutting down"))
 
 (defn- logged-in [request]
   (get-in request [:session :name]))
@@ -77,15 +39,15 @@
        (views.log/page (logged-in request) index))
   ; Event receptor
   (POST "/game/:evt" [evt :as request]
-       (game/POST! (logged-in request) request (rq/body-string request)))
+       (world/POST! (logged-in request) request (rq/body-string request)))
   ; Debug handlers
   (GET "/debug/state" request
        (str "<pre>"
          (with-out-str (pprint (request :session)))
-         (with-out-str (pprint (game/state)))
+         (with-out-str (pprint (world/state)))
          "</pre>"))
   (GET "/debug/reset" request
-       (game/reset-game!)
+       (world/reset-game!)
        {:status 200
         ; :headers {"Location" "/"}
         :headers {"Content-type" "text/plain"}
@@ -121,7 +83,7 @@
         ; Everything else falls through to the rest of the handlers.
         :else (next-handler request)))))
 
-(def app
+(def handler
   (-> (routes app-routes)
       (wrap-session-redirect)
       (wrap-session-debug)
@@ -131,5 +93,3 @@
             (assoc-in [:session :cookie-attrs :max-age] (* 72 60 60))
             (assoc-in [:security :anti-forgery] false)))
       (wrap-base-url)))
-
-(def handler #'app)

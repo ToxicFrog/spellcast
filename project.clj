@@ -23,9 +23,9 @@
   :plugins [[lein-ring "0.12.5"]
             [io.aviso/pretty "0.1.37"]]
   :middleware [io.aviso.lein-pretty/inject]
-  :ring {:handler spellcast.routes/handler
-         :init spellcast.routes/init
-         :destroy spellcast.routes/destroy}
+  :ring {:handler spellcast.core/request-handler
+         :init spellcast.core/init
+         :destroy spellcast.core/destroy}
   :profiles
   {:uberjar {:aot :all}
    :production
