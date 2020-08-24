@@ -12,6 +12,7 @@
     [compojure.route :as route]
     [hiccup.middleware :refer [wrap-base-url]]
     [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
+    [ring.middleware.json :refer [wrap-json-body wrap-json-params wrap-json-response]]
     [ring.util.request :as rq]
     [ring.util.response :as r]
     [spellcast.phase.all]
@@ -39,7 +40,7 @@
        (views.log/page (logged-in request) index))
   ; Event receptor
   (POST "/game/:evt" [evt :as request]
-       (world/POST! (logged-in request) request (rq/body-string request)))
+       (world/POST! (logged-in request) request (request :body)))
   ; Debug handlers
   (GET "/debug/state" request
        (str "<pre>"
@@ -60,8 +61,11 @@
   (route/not-found "Not Found"))
 
 (defn wrap-session-debug [next-handler]
-  (fn [request]
-    (debug ">>" (request :request-method) (request :uri) (request :session) (request :body))
+  (fn [{:keys [request-method uri session headers params body] :as request}]
+    (debug ">>" request-method uri session
+      "\n -headers" headers
+      "\n -params" params
+      "\n -body" body)
     (let [response (next-handler request)]
       (debug "<<" response) ;(dissoc response :headers))
       response)))
@@ -83,10 +87,17 @@
         ; Everything else falls through to the rest of the handlers.
         :else (next-handler request)))))
 
-(def handler
+(def handler'
+  "The inner parts of the handler, for testing."
   (-> (routes app-routes)
       (wrap-session-redirect)
       (wrap-session-debug)
+      (wrap-json-body {:keywords? true})
+      (wrap-json-response)
+      ))
+
+(def handler
+  (-> handler'
       (wrap-defaults
         (-> site-defaults
             (assoc-in [:session :cookie-name] "spellcast-session") ;(str "spellcast-" (System/currentTimeMillis)))

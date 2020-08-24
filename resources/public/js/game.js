@@ -1,16 +1,14 @@
-function refreshLog() {
-  let n = document.getElementById('log-index').value;
-  fetch("/log/"+n, {credentials: "same-origin"})
+function refreshLog(stamp) {
+  fetch("/log/"+stamp, {credentials: "same-origin"})
   .then(function(response) {
     let log = document.getElementById('log');
     if (!response.ok) {
       log.innerHTML = 'Error reading message log -- reload the page.';
-      setTimeout(refreshLog, 10000);
       return;
     }
-    response.text().then(function(body) {
-      document.getElementById("log").innerHTML = body;
-      setTimeout(refreshLog, 1000);
+    response.json().then(function(json) {
+      document.getElementById("log").innerHTML = json.log.join('<br/>');
+      setTimeout(refreshLog, 1, json.stamp);
     });
   })
 }
@@ -19,16 +17,19 @@ function post(url, body) {
   return fetch(url, {
     credentials: "same-origin",
     method: 'POST',
-    body: body,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
   })
 }
 
 function initSpellcast() {
-  refreshLog();
+  refreshLog(0);
   let talk = document.getElementById("talk");
   talk.addEventListener(
     'change', function(event) {
-      post('/game/log', event.target.value);
+      post('/game/log', {"text": event.target.value});
       event.target.value = '';
     })
 }

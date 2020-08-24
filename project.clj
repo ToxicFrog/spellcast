@@ -18,6 +18,7 @@
                  [prismatic/schema "1.1.12"]
                  [ring "1.8.0"]
                  [ring/ring-defaults "0.3.2" :exclusions [ring/ring-core]]
+                 [ring/ring-json "0.5.0" :exclusions [ring/ring-core]]
                  [slingshot "0.12.2"]
                  ]
   :plugins [[lein-ring "0.12.5"]

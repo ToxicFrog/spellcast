@@ -12,15 +12,9 @@
     [spellcast.world :as world]
     ))
 
-(defn- to-html [log]
-  (html
-    [:div
-     [:input#log-index {:type :hidden :value (hash log)}]
-     (interpose [:br] log)]))
-
 (defn page [player index]
   (as-> (world/watch #(game/get-log % player) index) $
-        (to-html $)
+        {:log $ :stamp (hash $)}
         (r/response $)
         (r/content-type $ "text/html")
         $))

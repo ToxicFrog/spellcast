@@ -46,9 +46,9 @@
 
 (defn post-log
   "Add a chat message from the given player."
-  [world :- Game, player :- s/Str, body :- s/Str] :- EventResult
+  [world :- Game, player :- s/Str, {:keys [text]} :- {:text s/Str}] :- EventResult
    (as-> world $
-         (log $ {:name player :text body}
+         (log $ {:name player :text text}
            player "You say, \"{{text}}\""
            :else "{{name}} says, \"{{text}}\"")
          $))
