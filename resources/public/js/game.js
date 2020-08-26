@@ -1,3 +1,22 @@
+function refresh(url, stamp, element, render) {
+  let path = url + "/" + stamp;
+  fetch(path, {credentials: "same-origin"})
+  .then(function(response) {
+    if (!response.ok) {
+      element.innerHTML = 'Error loading ' + path + ' -- try reloading the page.';
+      return;
+    }
+    response.json().then(function(json) {
+      element.innerHTML = render(json);
+      setTimeout(refresh, 1, url, json.stamp, element, render);
+    });
+  })
+}
+
+function renderLog(json) {
+  return json.log.join('<br/>');
+}
+
 function refreshLog(stamp) {
   fetch("/log/"+stamp, {credentials: "same-origin"})
   .then(function(response) {
@@ -25,7 +44,7 @@ function post(url, body) {
 }
 
 function initSpellcast() {
-  refreshLog(0);
+  refresh('/log', 0, document.getElementById('log'), renderLog);
   let talk = document.getElementById("talk");
   talk.addEventListener(
     'change', function(event) {
