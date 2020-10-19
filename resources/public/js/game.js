@@ -1,3 +1,6 @@
+let $ = sel => document.querySelector(sel);
+let $$ = sel => document.querySelectorAll(sel);
+
 function refresh(url, stamp, element, render) {
   let path = url + "/" + stamp;
   fetch(path, {credentials: "same-origin"})
@@ -43,9 +46,23 @@ function post(url, body) {
   })
 }
 
-function initSpellcast() {
-  refresh('/log', 0, document.getElementById('log'), renderLog);
-  let talk = document.getElementById("talk");
+function showGesturePicker(picker) {
+  picker.classList.remove("hidden");
+}
+
+function initGesturePicker(player, hand) {
+  let cell = $('#gesture-'+player+'-'+hand+'-0');
+  let picker = $('#gesture-picker-'+hand);
+  cell.onclick = _ => showGesturePicker(picker);
+  picker.style.left = cell.x + 'px';
+  picker.style.top = cell.y + 'px';
+}
+
+function initSpellcast(player) {
+  initGesturePicker(player, "left");
+  initGesturePicker(player, "right");
+  refresh('/log', 0, $('#log'), renderLog);
+  let talk = $("#talk");
   talk.addEventListener(
     'change', function(event) {
       post('/game/log', {"text": event.target.value});

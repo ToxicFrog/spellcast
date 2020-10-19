@@ -10,21 +10,6 @@
     [spellcast.world :as game]
     ))
 
-(comment
-  "
-  TODO: how the fuck do I do this in CSS?
-  ------------------------------
-  |    |    |    |    |    |   |
-  |    |gest|    |    |    |   |
-  |    |ures|    |    |  <--------- subtable for gestures
-  |log |    |    |    |    |   |
-  |    |-----------------------|
-  |----|  questions      | stat|
-  |chat|             ^   |  us |
-  -------------------|----------
-                     |subtable for questions
-  ")
-
 ; TODO the gesture grid is transmitted to the client when /game is fetched. This is
 ; wrong in at least two ways: first, the current player isn't guaranteed to be
 ; leftmost in the grid, and second, when another player joins everyone else needs
@@ -35,34 +20,57 @@
    [:tr [:th {:colspan 2} name]]
    (for [n (reverse (range 0 8))]
      [:tr
-      [:td [:img {:id (str "gesture:" name ":L:" n)
-                      :src "/img/nothing-left.png"}]]
-      [:td [:img {:id (str "gesture:" name ":R:" n)
-                      :src "/img/nothing-right.png"}]]
+      [:td [:img {:id (str "gesture-" name "-left-" n)
+                  :src (str "/img/nothing-left.png")
+                  :gesture "nothing"}]]
+      [:td [:img {:id (str "gesture-" name "-right-" n)
+                  :src (str "/img/nothing-right.png")
+                  :gesture "nothing"}]]
       ])])
 
-(defn gesture-tables []
-  (let [players (-> (game/state) :players keys)]
+(defn gesture-tables [player]
+  (let [players (->> (game/state) :players keys
+                     ; make sure the current player always sorts first
+                     (sort-by (fn [name] (if (= player name) ""
+                                           name))))]
     [:table
      [:tr.header [:th {:colspan (count players)} "GESTURES"]]
      [:tr
       (for [p players] [:td (gesture-table-for-player p)])]]))
 
-(defn page [_request _player]
+(defn gesture-picker [hand]
+  (let [pickable-gestures ["nothing" "palm" "snap" "clap"
+                           "knife" "fingers" "digit" "wave"]
+        as-td (fn [gesture]
+                [:td [:img {:src (str "/img/" gesture "-" hand ".png")}]])
+        ]
+  (as-> pickable-gestures $
+        (map as-td $)
+        (partition 4 $)
+        (map #(conj % :tr) $)
+        (mapv vec $)
+        (concat [:table.gesture-picker.hidden
+                 {:id (str "gesture-picker-" (name hand))}]
+          $)
+        (vec $))))
+
+(defn page [_request player]
   (html5
     [:head
      [:title "Spellcast"]
      (include-js "/js/game.js")
      (include-css "/css/spellcast.css")]
-    [:body {:onload "initSpellcast();"}
+    [:body {:onload (str "initSpellcast('" player "');")}
+     (gesture-picker "left")
+     (gesture-picker "right")
      [:table#ui
       [:tr
        [:td#chat-ui {:rowspan 3}
         [:table
-         [:tr.header [:th "GAME LOG"]]
+         [:tr.short [:th "GAME LOG"]]
          [:tr [:td [:div#log [:input#log-index {:type :hidden :value 0}]]]]
-         [:tr [:td [:input#talk]]]]]
-       [:td#gesture-ui (gesture-tables)]]
+         [:tr.short [:td [:input#talk]]]]]
+       [:td#gesture-ui (gesture-tables player)]]
       [:tr
        [:td [:button#submit {:disabled true} "LOADING"]]]
       [:tr
