@@ -36,7 +36,10 @@
 
 (defn get [_]
   (if (-> (world/state) :phase (not= :pregame))
-    (-> "A game is already in progress." r/response (r/status 409))
+    (-> "A game is already in progress."
+        r/response
+        (r/status 409)
+        (r/content-type "text/plain"))
     (join-page)))
 
 (defn- check-game-start [world]
