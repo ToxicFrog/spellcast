@@ -25,6 +25,7 @@
                  [org.clojure/core.async "1.3.610"]
                  [cljs-http "0.1.46"]
                  [binaryage/oops "0.7.0"]
+                 [reagent "1.0.0-alpha2"]
                  ]
   :plugins [[lein-ring "0.12.5"]
             [io.aviso/pretty "0.1.37"]

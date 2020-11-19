@@ -4,6 +4,8 @@
             [cljs.core.async :refer [<! go]]
             [clojure.string :as string]
             [oops.core :refer [oget oset! ocall!]]
+            [reagent.core :as r]
+            [reagent.dom]
             [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]]
             ; [taoensso.timbre :as timbre
             ;  :refer [trace debug info warn error fatal
@@ -22,13 +24,15 @@
           response (<! (http/get url {:with-credentials? true}))
           body (response :body)]
       (if (response :success)
-        (do
-          (oset! element :innerHTML (render body))
-          (js/setTimeout refresh 1 path (body :stamp) element render))
-        (oset! element :innerHTML (str "Error loading " url " -- try reloading the page."))))))
+        (reset! atom (-> response :body mapper))
+        (prn "Error refreshing " url " -- try reloading the page."))
+      (js/setTimeout refresh 1 path (body :stamp) atom mapper))))
 
-(defn render-log [log]
-  (string/join "<br/>" (log :log)))
+(defn log-view []
+  (let [log (r/atom [])]
+    (refresh "/log" 0 log :log)
+    (fn []
+      (into [:div] (interpose [:br] @log)))))
 
 (defn show-gesture-picker [picker]
   (ocall! picker [:classList :remove] "hidden"))
@@ -51,7 +55,8 @@
 (defn init [player]
   (init-gesture-picker player "left")
   (init-gesture-picker player "right")
-  (refresh "/log" 0 ($ "#log") render-log)
+  ; (refresh "/log" 0 ($ "#log") render-log)
+  (reagent.dom/render [log-view] ($ "#log"))
   (ocall! ($ "#talk") :addEventListener "change" send-chat-message)
   (prn "Initialization complete."))
 
