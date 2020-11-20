@@ -18,21 +18,31 @@
 (defn $ [& sel] (.querySelector js/document (apply str sel)))
 (defn $$ [& sel] (.querySelectorAll js/document (apply str sel)))
 
-(defn refresh [path stamp element render]
-  (go
-    (let [url (str path "/" stamp)
-          response (<! (http/get url {:with-credentials? true}))
-          body (response :body)]
-      (if (response :success)
-        (reset! atom (-> response :body mapper))
-        (prn "Error refreshing " url " -- try reloading the page."))
-      (js/setTimeout refresh 1 path (body :stamp) atom mapper))))
+(defn long-poll
+  "Long-poll the given view path and whenever it changes, reset! the result into the atom. If called without a stamp, uses a stamp of 0; subsequent refreshes get the stamp from the X-Stamp header."
+  ([path atom] (long-poll path atom 0))
+  ([path atom stamp]
+    (go
+      (let [url (str path "/" stamp)
+            response (<! (http/get url {:with-credentials? true}))
+            success (response :success)]
+        (prn response)
+        (if success
+          (do
+            (reset! atom (response :body))
+            (js/setTimeout long-poll 1 path atom (get-in response [:headers "x-stamp"])))
+          (do
+            (reset! atom nil)
+            (js/setTimeout long-poll 5000 path atom 0)))))))
+
 
 (defn log-view []
   (let [log (r/atom [])]
-    (refresh "/log" 0 log :log)
+    (long-poll "/log" log)
     (fn []
-      (into [:div] (interpose [:br] @log)))))
+      (if @log
+        (into [:div] (interpose [:br] @log))
+        [:div "Error loading log!"]))))
 
 (defn show-gesture-picker [picker]
   (ocall! picker [:classList :remove] "hidden"))
