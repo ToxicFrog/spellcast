@@ -6,18 +6,13 @@
              :refer [trace debug info warn error fatal
                      tracef debugf infof warnf errorf fatalf]])
   (:require
-    [spellcast.data.player :as player :refer [Player]]
+    [spellcast.data.player :as player :refer [Player VisFilter]]
     ))
-
-(defschema LogFilter
-  (s/cond-pre
-    #{s/Str}
-    (s/=> (s/maybe s/Str) s/Bool)))
 
 (defschema LogMessage
   "A log message consists of a log line followed by a set of players the log message is meant to be visible to, identified by name.
   A log can also be marked as visible to :all, in which case all players can see it."
-  [(s/one s/Str "message") (s/one LogFilter "vis")])
+  [(s/one s/Str "message") (s/one VisFilter "vis")])
 
 (defschema GameSettings
   {:max-players (s/constrained s/Int (partial < 1))
@@ -51,7 +46,7 @@
 
 (defn add-log :- Game
   "Add a message to the game log. It will be visible only to players for whom (filter playername) returns true."
-  [world :- Game, message :- s/Str, filter :- LogFilter]
+  [world :- Game, message :- s/Str, filter :- VisFilter]
   (update world :log conj [message filter]))
 
 (defn get-log :- [s/Str]
@@ -60,6 +55,15 @@
   (->> (world :log)
        (filter (fn [[_ vis]] (vis name)))
        (map first)))
+
+(defn- map-vals [f kvs]
+  (into {}
+    (map (fn [[k v]] [k (f v)]) kvs)))
+
+(defn get-filtered-players :- {s/Str Player}
+  "Return the player map, with gesture record filters applied."
+  [world :- Game, player :- s/Str]
+  (map-vals #(player/with-filtered-gestures % player) (world :players)))
 
 (defn add-player :- Game
   "Add a new player to the game. Throws if someone with that name is already present."
