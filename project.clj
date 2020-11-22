@@ -37,7 +37,10 @@
   :cljsbuild
   {:builds [{:source-paths ["cljs"]
              :jar true
+             :notify-command ["notify-send" "-i" "/home/rebecca/opt/cljs.svg"]
              :compiler {:output-to "resources/public/js/main.js"
+                        :source-map "resources/public/js/main.js.map"
+                        :output-dir "resources/public/js/"
                         :optimizations :whitespace
                         :pretty-print true}}]}
   :profiles
