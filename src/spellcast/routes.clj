@@ -36,9 +36,10 @@
   (POST "/join" request (views.join/post request))
   ; Getters for the in-game UI and game data.
   (GET "/game" request (views.game/page request (logged-in request)))
-  (GET "/log/:index" [index :<< as-int :as request]
+  (GET "/spectate" request (views.game/page request nil))
+  (GET "/data/log/:index" [index :<< as-int :as request]
        (views.log/page (logged-in request) index))
-  (GET "/players/:index" [index :<< as-int :as request]
+  (GET "/data/players/:index" [index :<< as-int :as request]
        (views.log/players (logged-in request) index))
   ; Event receptor
   (POST "/game/:evt" [evt :as request]
@@ -77,13 +78,20 @@
     (let [joined (-> request :session :name some?)
           uri (request :uri)]
       (cond
-        ; If they aren't logged in, redirect anything in /game to /join
+        ; debug requests do not require authentication
         (string/starts-with? uri "/debug") (next-handler request)
+        ; game data requests don't either; they will serve spectator data to
+        ; unauthenticated clients
+        (string/starts-with? uri "/data") (next-handler request)
+        ; players who aren't logged in are allowed to join or spectate only
+        ; if they request anything else redirect them to /join
         (and
           (not joined)
-          (not= "/join" uri))
+          (not= "/join" uri)
+          (not= "/spectate" uri))
         {:status 302 :headers {"Location" "/join"} :body ""}
-        ; If they are logged in, don't let them access /join, bounce them to /game instead
+        ; players who are logged in can't access /join, and should be redirected
+        ; to /game instead
         (and joined (= "/join" uri))
         {:status 302 :headers {"Location" "/game"} :body ""}
         ; Everything else falls through to the rest of the handlers.

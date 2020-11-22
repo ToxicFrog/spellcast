@@ -51,7 +51,7 @@
 
 (defn get-log :- [s/Str]
   "Return the log messages visible to the given player. Note that when requested by someone who is not logged in, name may be nil."
-  [world :- Game, name :- s/Str]
+  [world :- Game, name :- (s/maybe s/Str)]
   (->> (world :log)
        (filter (fn [[_ vis]] (vis name)))
        (map first)))
@@ -62,7 +62,7 @@
 
 (defn get-filtered-players :- {s/Str Player}
   "Return the player map, with gesture record filters applied."
-  [world :- Game, player :- s/Str]
+  [world :- Game, player :- (s/maybe s/Str)]
   (map-vals #(player/with-filtered-gestures % player) (world :players)))
 
 (defn add-player :- Game
