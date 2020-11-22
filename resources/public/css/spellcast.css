@@ -45,7 +45,7 @@ input#talk {
 }
 
 /* Gesture table elements */
-#gesture-ui > table {
+#gesture > table {
   border: 1px solid #a0a;
 }
 

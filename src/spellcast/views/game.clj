@@ -10,34 +10,6 @@
     [spellcast.world :as game]
     ))
 
-; TODO the gesture grid is transmitted to the client when /game is fetched. This is
-; wrong in at least two ways: first, the current player isn't guaranteed to be
-; leftmost in the grid, and second, when another player joins everyone else needs
-; to refresh the page to get the updated grid. The grid should be constructed in JS
-; based on the current state of the game.
-(defn gesture-table-for-player [name]
-  [:table.gestures
-   [:tr [:th {:colspan 2} name]]
-   (for [n (reverse (range 0 8))]
-     [:tr
-      [:td [:img {:id (str "gesture-" name "-left-" n)
-                  :src (str "/img/nothing-left.png")
-                  :gesture "nothing"}]]
-      [:td [:img {:id (str "gesture-" name "-right-" n)
-                  :src (str "/img/nothing-right.png")
-                  :gesture "nothing"}]]
-      ])])
-
-(defn gesture-tables [player]
-  (let [players (->> (game/state) :players keys
-                     ; make sure the current player always sorts first
-                     (sort-by (fn [name] (if (= player name) ""
-                                           name))))]
-    [:table
-     [:tr.header [:th {:colspan (count players)} "GESTURES"]]
-     [:tr
-      (for [p players] [:td (gesture-table-for-player p)])]]))
-
 (defn gesture-picker [hand]
   (let [pickable-gestures ["nothing" "palm" "snap" "clap"
                            "knife" "fingers" "digit" "wave"]
@@ -70,7 +42,7 @@
          [:tr.short [:th "GAME LOG"]]
          [:tr [:td#log]]
          [:tr.short [:td [:input#talk]]]]]
-       [:td#gesture-ui (gesture-tables player)]]
+       [:td#gestures]]
       [:tr
        [:td [:button#submit {:disabled true} "LOADING"]]]
       [:tr
