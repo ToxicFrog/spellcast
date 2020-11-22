@@ -46,8 +46,15 @@
    ; is over, gestures made while invisible are only ever visible to the owner,
    ; gestures are never visible to someone who was blind when they were being made, etc
    :gestures [GestureRecord]
-   ; :status s/Any ; status effects -- map from effect to duration?
-   ; :creatures ...
+   ; map from effect type to duration
+   ; decrements at end of turn, so 1 means the effect will expire at the end of
+   ; the current turn.
+   ; effects like disease and poison will count down to the point where you die
+   ; permanent effects will have value Double/POSITIVE_INFINITY
+   :effects {s/Keyword s/Num}
+   ; :minions
+   ; :minions {s/Keyword }
+   ; map from name to (hp, type) pair?
    })
 
 (defschema PlayerParams
@@ -63,6 +70,7 @@
    ; for testing -- initialize with random gestures
    ;:gestures []
    :gestures (take 4 (repeatedly random-gesture))
+   :effects {:protection 3 :haste 1}
    })
 
 (defn- filter-gesture

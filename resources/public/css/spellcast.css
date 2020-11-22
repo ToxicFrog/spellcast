@@ -41,12 +41,26 @@ tr, td {
 }
 
 input#talk {
-  width: 100%;
+  width: 98%;
 }
 
-/* Gesture table elements */
-#gesture > table {
+/* Game status display -- gestures, HP, etc */
+#status table {
   border: 1px solid #a0a;
+}
+
+#status table tr {
+  height: 1em;
+}
+
+#status tr.status {
+  height: 1em;
+  border: 1px solid #ff0;
+}
+
+#status tr.status td {
+  width: 100%;
+  text-align: center;
 }
 
 table.gestures {

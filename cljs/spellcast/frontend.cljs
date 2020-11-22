@@ -48,18 +48,27 @@
                       (take 8)
                       reverse
                       (map-indexed vector))]
-    [:table.gestures
-     [:tbody
-      [:tr [:th {:col-span 2} name]]
-      (for [[n gesture] gestures]
-        ^{:key n}
-        [:tr
-         [:td [:img {:src (str "/img/" (gesture :left) "-left.png")}]]
-         [:td [:img {:src (str "/img/" (gesture :right) "-right.png")}]]
-         ])
-      ]]))
+    [:td
+     [:table.gestures
+      [:tbody
+       [:tr [:th {:col-span 2} name]]
+       (for [[n gesture] gestures]
+         ^{:key n}
+         [:tr
+          [:td [:img {:src (str "/img/" (gesture :left) "-left.png")}]]
+          [:td [:img {:src (str "/img/" (gesture :right) "-right.png")}]]
+          ])
+       ]]]))
 
-(defn gesture-view [_player]
+(defn status-for-player [[_name {:keys [hp effects]}]]
+  [:td
+   [:pre "  " hp " HP\n"
+    (for [[effect duration] effects]
+      (str (name effect) " " duration))
+    ]])
+   ; (when (< 0 (count effects)) "Effects:\n")
+
+(defn status-view [_player]
   (let [players (r/atom {})]
     (long-poll "/data/players" players)
     (fn [player]
@@ -72,7 +81,11 @@
               [:table [:tbody
                [:tr.header [:th {:col-span (count $)} "GESTURES"]]
                [:tr
-                (for [p $] [:td (gesture-table-for-player p)])]]]
+                (for [p $] (gesture-table-for-player p))]
+               [:tr.header [:th {:col-span (count $)} "STATUS"]]
+               [:tr.status
+                (for [p $] (status-for-player p))]
+               ]]
               )))))
 
 (defn show-gesture-picker [picker]
@@ -97,7 +110,7 @@
   ; (init-gesture-picker player "left")
   ; (init-gesture-picker player "right")
   (reagent.dom/render [log-view] ($ "#log"))
-  (reagent.dom/render [gesture-view player] ($ "#gestures"))
+  (reagent.dom/render [status-view player] ($ "#status"))
   (ocall! ($ "#talk") :addEventListener "change" send-chat-message)
   (prn "Initialization complete."))
 

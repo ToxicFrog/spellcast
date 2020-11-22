@@ -37,17 +37,13 @@
      (gesture-picker "right")
      [:table#ui
       [:tr
-       [:td#chat-ui {:rowspan 3}
+       [:td#chat-ui {:rowspan 2}
         [:table
          [:tr.short [:th "GAME LOG"]]
          [:tr [:td#log]]
          [:tr.short [:td [:input#talk]]]]]
-       [:td#gestures]]
+       [:td#status]]
       [:tr
        [:td [:button#submit {:disabled true} "LOADING"]]]
-      [:tr
-       [:td#status-ui
-        [:table
-         [:tr.header [:th "STATUS"]]
-         [:tr [:td#status]]]]]]
+      ]
     ]))
