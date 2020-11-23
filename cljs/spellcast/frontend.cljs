@@ -12,10 +12,12 @@
   ))
 
 (enable-console-print!)
-(prn "Starting up...")
 
 (defn $ [& sel] (.querySelector js/document (apply str sel)))
 (defn $$ [& sel] (.querySelectorAll js/document (apply str sel)))
+
+(def me nil)
+(defn me? [who] (= who me))
 
 (defn long-poll
   "Long-poll the given view path and whenever it changes, reset! the result into the atom. If called without a stamp, uses a stamp of 0; subsequent refreshes get the stamp from the X-Stamp header."
@@ -25,7 +27,7 @@
       (let [url (str path "/" stamp)
             response (<! (http/get url {:with-credentials? true}))
             success (= (response :status) 200)]
-        (prn response)
+        (println ">> " url "\n" response)
         (if success
           (do
             (reset! atom (response :body))
@@ -42,7 +44,11 @@
         (into [:div] (interpose [:br] @log))
         [:div "Error loading log!"]))))
 
-(defn gesture-table-for-player [[name {:keys [gestures]}]]
+(defn- gesture-img [gesture hand]
+  [:img {:src (str "/img/" gesture "-" hand ".png")
+         :alt gesture}])
+
+(defn gesture-table-for-player [{who :name :keys [gestures]}]
   (let [filler (repeat {:left "nothing" :right "nothing"})
         gestures (->> (lazy-cat gestures filler)
                       (take 8)
@@ -51,40 +57,53 @@
     [:td
      [:table.gestures
       [:tbody
-       [:tr [:th {:col-span 2} name]]
+       ^{:key (str who "-gestures-0")}
+       [:tr [:th {:col-span 2} who]]
        (for [[n gesture] gestures]
-         ^{:key n}
+       ^{:key (str who "-gestures-" n)}
          [:tr
-          [:td [:img {:src (str "/img/" (gesture :left) "-left.png")}]]
-          [:td [:img {:src (str "/img/" (gesture :right) "-right.png")}]]
+          [:td (gesture-img (gesture :left) "left")]
+          [:td (gesture-img (gesture :right) "right")]
           ])
        ]]]))
 
-(defn status-for-player [[_name {:keys [hp effects]}]]
-  [:td
-   [:pre "  " hp " HP\n"
-    (for [[effect duration] effects]
-      (str (name effect) " " duration))
-    ]])
-   ; (when (< 0 (count effects)) "Effects:\n")
+(def gesture-table-for-wizard gesture-table-for-player)
 
-(defn status-view [_player]
+(defn status-pane-for-wizard [{who :name :keys [hp effects]}]
+  (let [health-class (condp >= hp
+                       5  "hp critical"
+                       10 "hp low"
+                       14 "hp damaged"
+                       "hp full")]
+    [:td
+     [:pre "Health: " hp
+      (when (me? who) [:span {:class health-class} " ❤"])
+      "\n"
+      (for [[effect duration] effects]
+        (str duration " " (name effect) "\n"))
+      ]]))
+
+(defn status-view []
   (let [players (r/atom {})]
     (long-poll "/data/players" players)
-    (fn [player]
+    (fn []
       (if (not @players)
         [:div "Error loading gesture data!"]
         (as-> @players $
-              (do (prn $) $)
+              (do (prn "player map" $) $)
               ; Make sure the current player always sorts first
-              (sort-by (fn [[name _]] (if (= player name) "" name)) $)
+              (sort-by (fn [[who _]] (if (me? who)  "" (name who))) $)
               [:table [:tbody
-               [:tr.header [:th {:col-span (count $)} "GESTURES"]]
+               [:tr.header [:th {:col-span (* 100 (count $))} "GESTURES"]]
                [:tr
-                (for [p $] (gesture-table-for-player p))]
+                (for [[who p] $]
+                  ^{:key (str who ".gestures")}
+                  (gesture-table-for-wizard p))]
                [:tr.header [:th {:col-span (count $)} "STATUS"]]
                [:tr.status
-                (for [p $] (status-for-player p))]
+                (for [[who p] $]
+                  ^{:key (str who ".statline")}
+                  (status-pane-for-wizard p))]
                ]]
               )))))
 
@@ -102,16 +121,14 @@
   (http/post path {:with-credentials? true
                    :json-params body}))
 
-(defn send-chat-message [event]
-  (post "/game/log" {:text (oget event :target :value)})
-  (oset! event [:target :value] ""))
+(defn send-chat-message [element]
+  (post "/game/log" {:text (oget element :value)})
+  (oset! element :value ""))
 
 (defn init [player]
-  ; (init-gesture-picker player "left")
-  ; (init-gesture-picker player "right")
+  (set! me player)
   (reagent.dom/render [log-view] ($ "#log"))
-  (reagent.dom/render [status-view player] ($ "#status"))
-  (ocall! ($ "#talk") :addEventListener "change" send-chat-message)
-  (prn "Initialization complete."))
+  (reagent.dom/render [status-view] ($ "#status")))
 
 (set! js/initSpellcast init)
+(set! js/sendChatMessage send-chat-message)

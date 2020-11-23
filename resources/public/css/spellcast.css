@@ -60,8 +60,13 @@ input#talk {
 
 #status tr.status td {
   width: 100%;
-  text-align: center;
 }
+
+span.hp { font-weight: bold; }
+span.hp.critical { color: #FF0000; }
+span.hp.low { color: orange; }
+span.hp.damaged { color: yellow; }
+span.hp.full { color: green; }
 
 table.gestures {
   height: 1em;

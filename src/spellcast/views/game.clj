@@ -41,7 +41,7 @@
         [:table
          [:tr.short [:th "GAME LOG"]]
          [:tr [:td#log]]
-         [:tr.short [:td [:input#talk]]]]]
+         [:tr.short [:td [:input#talk {:onchange "sendChatMessage(this);"}]]]]]
        [:td#status]]
       [:tr
        [:td [:button#submit {:disabled true} "LOADING"]]]
