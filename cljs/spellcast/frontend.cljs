@@ -57,10 +57,10 @@
     [:td
      [:table.gestures
       [:tbody
-       ^{:key (str who "-gestures-0")}
+       ; ^{:key (str who "-gestures-0")}
        [:tr [:th {:col-span 2} who]]
        (for [[n gesture] gestures]
-       ^{:key (str who "-gestures-" n)}
+       ; ^{:key (str who "-gestures-" n)}
          [:tr
           [:td (gesture-img (gesture :left) "left")]
           [:td (gesture-img (gesture :right) "right")]
@@ -75,7 +75,7 @@
                        10 "hp low"
                        14 "hp damaged"
                        "hp full")]
-    [:td
+    [:td.status
      [:pre "Health: " hp
       (when (me? who) [:span {:class health-class} " ❤"])
       "\n"
@@ -83,29 +83,33 @@
         (str duration " " (name effect) "\n"))
       ]]))
 
-(defn status-view []
-  (let [players (r/atom {})]
-    (long-poll "/data/players" players)
-    (fn []
-      (if (not @players)
-        [:div "Error loading gesture data!"]
-        (as-> @players $
-              (do (prn "player map" $) $)
-              ; Make sure the current player always sorts first
-              (sort-by (fn [[who _]] (if (me? who)  "" (name who))) $)
-              [:table [:tbody
-               [:tr.header [:th {:col-span (* 100 (count $))} "GESTURES"]]
-               [:tr
-                (for [[who p] $]
-                  ^{:key (str who ".gestures")}
-                  (gesture-table-for-wizard p))]
-               [:tr.header [:th {:col-span (count $)} "STATUS"]]
-               [:tr.status
-                (for [[who p] $]
-                  ^{:key (str who ".statline")}
-                  (status-pane-for-wizard p))]
-               ]]
-              )))))
+(defn gesture-history
+  "Emit the gesture history cells for the UI. These are going to spliced into a <tr>."
+  [_players]
+  (fn [players]
+    (if (not @players)
+      [:td "Error loading gesture history!"]
+      (as-> @players $
+            ; Make sure the current player always sorts first
+            (sort-by (fn [[who _]] (if (me? who)  "" (name who))) $)
+            [:<>
+             (for [[who p] $]
+               ; ^{:key (str who ".gestures")}
+               (gesture-table-for-wizard p))]))))
+
+(defn status-panes
+  "Emit the status pane cells for the UI. As with gesture-history, these get spliced into a <tr> and thus should be <td>s."
+  [_players]
+  (fn [players]
+    (if (not @players)
+      [:td "Error loading player status"]
+      (as-> @players $
+            ; Make sure the current player always sorts first
+            (sort-by (fn [[who _]] (if (me? who)  "" (name who))) $)
+            [:<>
+             (for [[who p] $]
+               ; ^{:key (str who ".statline")}
+               (status-pane-for-wizard p))]))))
 
 (defn show-gesture-picker [picker]
   (ocall! picker [:classList :remove] "hidden"))
@@ -128,7 +132,10 @@
 (defn init [player]
   (set! me player)
   (reagent.dom/render [log-view] ($ "#log"))
-  (reagent.dom/render [status-view] ($ "#status")))
+  (let [players (r/atom {})]
+    (long-poll "/data/players" players)
+    (reagent.dom/render [gesture-history players] ($ "#gesture-history"))
+    (reagent.dom/render [status-panes players] ($ "#status-panes"))))
 
 (set! js/initSpellcast init)
 (set! js/sendChatMessage send-chat-message)

@@ -42,7 +42,13 @@
          [:tr.short [:th "GAME LOG"]]
          [:tr [:td#log]]
          [:tr.short [:td [:input#talk {:onchange "sendChatMessage(this);"}]]]]]
-       [:td#status]]
+       [:td#status-ui
+        [:table
+         [:tbody
+          [:tr.header [:th {:colspan 999} "GESTURES"]]
+          [:tr#gesture-history]
+          [:tr.header [:th {:colspan 999} "STATUS"]]
+          [:tr#status-panes]]]]]
       [:tr
        [:td [:button#submit {:disabled true} "LOADING"]]]
       ]

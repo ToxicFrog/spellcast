@@ -45,20 +45,15 @@ input#talk {
 }
 
 /* Game status display -- gestures, HP, etc */
-#status table {
+#status-ui table {
   border: 1px solid #a0a;
 }
 
-#status table tr {
+#status-ui tr {
   height: 1em;
 }
 
-#status tr.status {
-  height: 1em;
-  border: 1px solid #ff0;
-}
-
-#status tr.status td {
+#status-ui td.status-pane {
   width: 100%;
 }
 
