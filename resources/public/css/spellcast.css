@@ -44,9 +44,15 @@ input#talk {
   width: 98%;
 }
 
-/* Game status display -- gestures, HP, etc */
+/* Right side status display -- gestures, HP, etc */
+#status-ui {
+  width: 1em; height: 100%;
+}
+
 #status-ui table {
   border: 1px solid #a0a;
+  width: 100%; height: 100%;
+  /*border: 1px solid #0aa;*/
 }
 
 #status-ui tr {
@@ -57,39 +63,28 @@ input#talk {
   width: 100%;
 }
 
+/* Colour-coded HP indicator for the current player. */
 span.hp { font-weight: bold; }
 span.hp.critical { color: #FF0000; }
 span.hp.low { color: orange; }
 span.hp.damaged { color: yellow; }
 span.hp.full { color: green; }
 
-table.gestures {
+/* Gesture history tables */
+table.gesture-history {
   height: 1em;
   width: 100%;
 }
 
-table.gesture-picker {
-  position: absolute;
-  top: 0px; left: 0px;
-  border: 0px;
-  background: #4040A0;
-}
-
-table.gesture-picker.hidden {
-  display: none;
-}
-
-table.gesture-picker td,
-table.gesture-picker tr {
-  padding: 0px; margin: 0px; border: 0px;
-  border-collapse: collapse;
-}
-
-table.gestures tr,
-table.gestures td {
+table.gesture-history tr,
+table.gesture-history td {
   padding: 0px; margin: 0px;
   border-collapse: collapse;
   border: 0px;
+}
+
+table.gesture-history td.pickable-gesture {
+  box-shadow: 0px 0px 10px violet;
 }
 
 /* SUBMIT button */
@@ -114,13 +109,23 @@ button#submit:active {
   background: radial-gradient(cyan, blue, black);
 }
 
-/* Status window */
-#status-ui {
-  width: 1em; height: 100%;
+/* Popup gesture picker */
+table.gesture-picker {
+  position: absolute;
+  background: none;
+  border: none;
 }
 
-#status-ui table {
-  width: 100%; height: 100%;
-  border: 1px solid #0aa;
+table.gesture-picker td,
+table.gesture-picker tr {
+  padding: 0px; margin: 0px; border: 0px;
+  border-collapse: collapse;
 }
 
+table.gesture-picker img:hover {
+  box-shadow: 0px 0px 10px cyan;
+}
+
+table.gesture-picker td.selected-gesture img {
+  box-shadow: 0px 0px 10px red;
+}

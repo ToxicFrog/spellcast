@@ -10,22 +10,6 @@
     [spellcast.world :as game]
     ))
 
-(defn gesture-picker [hand]
-  (let [pickable-gestures ["nothing" "palm" "snap" "clap"
-                           "knife" "fingers" "digit" "wave"]
-        as-td (fn [gesture]
-                [:td [:img {:src (str "/img/" gesture "-" hand ".png")}]])
-        ]
-  (as-> pickable-gestures $
-        (map as-td $)
-        (partition 4 $)
-        (map #(conj % :tr) $)
-        (mapv vec $)
-        (concat [:table.gesture-picker.hidden
-                 {:id (str "gesture-picker-" (name hand))}]
-          $)
-        (vec $))))
-
 (defn page [_request player]
   (html5
     [:head
@@ -33,8 +17,7 @@
      (include-js "/js/game.js")
      (include-css "/css/spellcast.css")]
     [:body {:onload (str "initSpellcast('" player "');")}
-     (gesture-picker "left")
-     (gesture-picker "right")
+     [:div#gesture-picker]
      [:table#ui
       [:tr
        [:td#chat-ui {:rowspan 2}

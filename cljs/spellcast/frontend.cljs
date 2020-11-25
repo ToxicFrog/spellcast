@@ -1,14 +1,10 @@
 (ns spellcast.frontend
-  (:refer-clojure :exclude [def defn defmethod defrecord fn letfn])
   (:require [cljs-http.client :as http]
             [cljs.core.async :refer [<! go]]
             [oops.core :refer [oget oset! ocall!]]
             [reagent.core :as r]
             [reagent.dom]
-            [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]]
-            ; [taoensso.timbre :as timbre
-            ;  :refer [trace debug info warn error fatal
-            ;          tracef debugf infof warnf errorf fatalf]]
+            [spellcast.gesture-picker :as picker]
   ))
 
 (enable-console-print!)
@@ -44,27 +40,35 @@
         (into [:div] (interpose [:br] @log))
         [:div "Error loading log!"]))))
 
-(defn- gesture-img [gesture hand]
+(defn- gesture-img [gesture hand clickable?]
   [:img {:src (str "/img/" gesture "-" hand ".png")
+         :on-click (when clickable? #(picker/show-at (.-target %) hand gesture))
          :alt gesture}])
 
 (defn gesture-table-for-player [{who :name :keys [gestures]}]
-  (let [filler (repeat {:left "nothing" :right "nothing"})
+  (let [histsize 8
+        filler (repeat {:left "nothing" :right "nothing"})
         gestures (->> (lazy-cat gestures filler)
-                      (take 8)
+                      (take histsize)
                       reverse
                       (map-indexed vector))]
     [:td
-     [:table.gestures
+     [:table.gesture-history
       [:tbody
        ; ^{:key (str who "-gestures-0")}
        [:tr [:th {:col-span 2} who]]
        (for [[n gesture] gestures]
-       ; ^{:key (str who "-gestures-" n)}
-         [:tr
-          [:td (gesture-img (gesture :left) "left")]
-          [:td (gesture-img (gesture :right) "right")]
-          ])
+        ; ^{:key (str who "-gestures-" n)}
+        (if (and (me? who) (= n (dec histsize)))
+          ; last row of the history table and it's the history table for the current player
+          ; TODO this is ugly, clean it up somehow
+          [:tr
+           [:td.pickable-gesture (gesture-img (gesture :left) "left" true)]
+           [:td.pickable-gesture (gesture-img (gesture :right) "right" true)]]
+          ; otherwise, not last row and/or gestures for other players
+          [:tr
+           [:td (gesture-img (gesture :left) "left" false)]
+           [:td (gesture-img (gesture :right) "right" false)]]))
        ]]]))
 
 (def gesture-table-for-wizard gesture-table-for-player)
@@ -93,7 +97,7 @@
             ; Make sure the current player always sorts first
             (sort-by (fn [[who _]] (if (me? who)  "" (name who))) $)
             [:<>
-             (for [[who p] $]
+             (for [[_who p] $]
                ; ^{:key (str who ".gestures")}
                (gesture-table-for-wizard p))]))))
 
@@ -107,19 +111,9 @@
             ; Make sure the current player always sorts first
             (sort-by (fn [[who _]] (if (me? who)  "" (name who))) $)
             [:<>
-             (for [[who p] $]
+             (for [[_who p] $]
                ; ^{:key (str who ".statline")}
                (status-pane-for-wizard p))]))))
-
-(defn show-gesture-picker [picker]
-  (ocall! picker [:classList :remove] "hidden"))
-
-(defn init-gesture-picker [player hand]
-  (let [cell ($ "#gesture-" player "-" hand "-0")
-        picker ($ "#gesture-picker-" hand)]
-    (oset! cell :onclick #(show-gesture-picker picker))
-    (oset! picker [:style :left] (str (oget cell :x) "px"))
-    (oset! picker [:style :top] (str (oget cell :y) "px"))))
 
 (defn post [path body]
   (http/post path {:with-credentials? true
@@ -132,6 +126,8 @@
 (defn init [player]
   (set! me player)
   (reagent.dom/render [log-view] ($ "#log"))
+  (picker/init ($ "#gesture-picker"))
+  ; (reagent.dom/render [gesture-picker "left" "nothing"] ($ "#gesture-picker"))
   (let [players (r/atom {})]
     (long-poll "/data/players" players)
     (reagent.dom/render [gesture-history players] ($ "#gesture-history"))
