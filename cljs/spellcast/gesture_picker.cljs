@@ -2,8 +2,7 @@
   "Gesture picker elements, for players to select gestures for each turn.
 
   Use init first to weave it into the DOM, then show or show-at to display it; it will pop up at the specified coordinates, wait for a gesture to be selected, then send it to the server and hide itself."
-  (:require [cljs-http.client :as http]
-            [reagent.core :as r]
+  (:require [reagent.core :as r]
             [reagent.dom]
   ))
 
@@ -39,8 +38,10 @@
     [:table.gesture-picker {:style {:left (str x "px") :top (str y "px")}}
      [:tbody
      (for [line pickable-gestures]
+       ^{:key (apply str "gesture-picker-row-" line)}
        [:tr
         (for [gesture line]
+          ^{:key (str "gesture-picker-cell-" gesture)}
           [:td (when (= gesture old-gesture) {:class "selected-gesture"})
            [:img {:src (str "/img/" gesture "-" hand ".png")
                       :on-click #(pick-gesture hand gesture)}]])
