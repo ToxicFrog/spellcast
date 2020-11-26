@@ -23,16 +23,22 @@
        [:td#chat-ui {:rowspan 2}
         [:table
          [:tr.short [:th "GAME LOG"]]
-         [:tr [:td#log]]
+         [:tr [:td#log "Loading..."]]
          [:tr.short [:td [:input#talk {:onchange "sendChatMessage(this);"}]]]]]
-       [:td#status-ui
+       [:td#status-ui {:colspan 3}
         [:table
          [:tbody
           [:tr.header [:th {:colspan 999} "GESTURES"]]
-          [:tr#gesture-history]
+          [:tr#gesture-history [:td "Loading..."]]
           [:tr.header [:th {:colspan 999} "STATUS"]]
-          [:tr#status-panes]]]]]
-      [:tr
-       [:td [:button#submit {:disabled true} "LOADING"]]]
-      ]
+          [:tr#status-panes [:td ":Loading..."]]]]]]
+      [:tr#button-row
+       (if player
+         [:td#ready-button.large [:button {:disabled true} "LOADING"]]
+         [:td.large
+          [:button.spectating {:disabled true} "SPECTATING"]
+          [:div#ready-button {:style "display: none;"} ]])
+       [:td.small [:img {:src "/img/spellbook2.svg" :style "width: 1.5em"}]]
+       [:td.small [:img {:src "/img/help.svg" :style "width 1.5em"}]]
+       ]]
     ]))

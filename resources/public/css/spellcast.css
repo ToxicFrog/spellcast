@@ -87,26 +87,41 @@ table.gesture-history td.pickable-gesture {
   box-shadow: 0px 0px 10px violet;
 }
 
-/* SUBMIT button */
-button#submit {
-  width: 100%;
+/* SUBMIT GESTURES button */
+#button-row button {
   color: #fff;
   background-color: #000;
-  background: radial-gradient(blue, black, black);
   font-weight: bold;
 }
 
-button#submit:disabled,
-button#submit:disabled:hover {
-  background: radial-gradient(red, black);
+#button-row button.ready,
+#button-row button.unready,
+#button-row button.spectating {
+  width: 100%;
 }
 
-button#submit:hover {
-  background: radial-gradient(blue, black);
+#button-row td.small { width: 1px; }
+/*#button-row td.large { width: 100%; }*/
+
+/*#button-row button:disabled {
+  background: radial-gradient(blue, black, black);
+}
+*/
+
+#button-row button.ready {
+  background: radial-gradient(green, black, black);
 }
 
-button#submit:active {
-  background: radial-gradient(cyan, blue, black);
+#button-row button.ready:hover {
+  background: radial-gradient(green, green, black);
+}
+
+#button-row button.unready {
+  background: radial-gradient(red, black, black);
+}
+
+#button-row button.unready:hover {
+  background: radial-gradient(red, green, black);
 }
 
 /* Popup gesture picker */
