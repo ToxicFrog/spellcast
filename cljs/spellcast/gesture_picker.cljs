@@ -4,6 +4,7 @@
   Use init first to weave it into the DOM, then show or show-at to display it; it will pop up at the specified coordinates, wait for a gesture to be selected, then send it to the server and hide itself."
   (:require [reagent.core :as r]
             [reagent.dom]
+            [spellcast.net :as net]
   ))
 
 (def ^:private picker-location
@@ -25,8 +26,8 @@
 
 (defn- pick-gesture [hand gesture]
   (println "gesture picked!" hand gesture)
-  ; TODO: need to POST this to the server
-  (reset! picker-location nil))
+  (reset! picker-location nil)
+  (net/post "/game/gesture" {:hand hand :gesture gesture}))
 
 (defn- gesture-picker
   "The actual rendering code for the gesture picker. If location-atom is nil, does nothing; otherwise returns a 4x2 table of pickable gestures with onclick handlers."

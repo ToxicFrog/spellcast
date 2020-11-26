@@ -14,6 +14,9 @@
 (defschema Pronouns
   (s/enum :they :she :he :it))
 
+(defschema Hand
+  (s/enum :left :right))
+
 (defschema Gesture
   (s/enum
     :nothing :knife :palm :fingers

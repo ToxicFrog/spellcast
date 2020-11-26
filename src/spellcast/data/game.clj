@@ -6,7 +6,7 @@
              :refer [trace debug info warn error fatal
                      tracef debugf infof warnf errorf fatalf]])
   (:require
-    [spellcast.data.player :as player :refer [Player VisFilter]]
+    [spellcast.data.player :as player :refer [Player VisFilter Gesture Hand]]
     ))
 
 (defschema LogMessage
@@ -76,3 +76,20 @@
   "Return a player with the given name, or nil."
   [world :- Game, name :- s/Str]
   (get-in world [:players name]))
+
+(defn set-gesture :- Game
+  [world :- Game, name :- s/Str, hand :- Hand, gesture :- Gesture]
+  (update-in world [:players name]
+    (fn [player]
+      (let [g (-> player :gestures first)
+            gs (-> player :gestures rest)
+            g' (assoc g hand gesture)]
+        (assoc player :gestures (cons g' gs))))))
+
+(defn get-gestures :- [(s/one Gesture "left") (s/one Gesture "right")]
+  [world :- Game, name :- s/Str]
+  (as-> world $
+        (get-player $ name)
+        (:gestures $)
+        (first $)
+        [(:left $) (:right $)]))

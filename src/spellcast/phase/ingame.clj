@@ -8,15 +8,14 @@
              :refer [trace debug info warn error fatal
                      tracef debugf infof warnf errorf fatalf]])
   (:require
-    [clojure.string :as string]
-    [ring.util.response :as r]
+    [spellcast.data.game :as game]
     [spellcast.logging :refer [log]]
     [spellcast.phase.common :as phase-common :refer [dispatch-event]]
     ))
 
 ; Chat handlers common to all phases.
 (defmethod dispatch-event [:ingame :log]
-  [world player _ body] (phase-common/post-log world player body))
+  [world player _request body] (phase-common/post-log world player body))
 
 (defn- enter-arena [world player]
   (log world {:player player}
@@ -27,23 +26,49 @@
   (let [players (-> world :players vals)]
     (reduce enter-arena world players)))
 
+(defn- latest-gestures [player]
+  (let [g (-> player :gestures first)]
+    [(g :left) (g :right)]))
+
+(defn- surrendered? [player]
+  (= [:palm :palm] (latest-gestures player)))
+
 (defn- test-game-resolution [world]
   ; (pprint world)
-  (let [players (world :players)
-        n (rand-int (count players))
-        [_ winner] (-> players seq (nth n))]
-    (-> world
-        (log {:winner winner}
-          :all "The duel begins! It is very impressive, but you can neither see nor participate in it, because that part of the server isn't implemented yet."
-          :all "When the dust clears, however, only one wizard is left standing..."
-          (winner :name) "<b>*** You are victorious! ***</b>"
-          :else "<b>*** {{name winner}} is victorious! ***</b>")
-        (assoc :phase :postgame))))
+  (let [loser (->> (world :players) vals (filter surrendered?) first)]
+    (if loser
+      (-> world
+          (log {:loser loser}
+            :all "The wizards engage in a game of 'first to surrender loses'. You'd be surprised how often it ends in a stalemate."
+            :all "Ok, maybe you wouldn't."
+            (loser :name) "<b>*** You have surrendered! ***</b>"
+            :else "<b>*** {{name loser}} has surrendered! ***</b>")
+          (assoc :phase :postgame))
+      world)))
 
 (defmethod dispatch-event [:ingame :BEGIN]
-  ([world _phase _event]
-   (test-game-resolution (game-start world))))
+  ([world _phase _event] world))
 
 (defmethod dispatch-event [:ingame :END]
-  ([world _phase _event]
-   world))
+  ([world _phase _event] world))
+
+(defn- valid-gesture
+  "Perform validation on an attempted gesture set request. The rules are:
+  - no setting of internal gestures (:antispell or :unseen)
+  - no setting both hands to :knife"
+  [world player gesture]
+  (let [has-knife? (-> (game/get-gestures world player) set :knife)]
+    (cond
+      (#{:antispell :unseen} gesture) false
+      (and has-knife? (= :knife gesture)) false
+      :else true)))
+
+(defmethod dispatch-event [:ingame :gesture]
+  [world player _request {:keys [hand gesture]}]
+  (let [hand (keyword hand)
+        gesture (keyword gesture)]
+    (if (valid-gesture world player gesture)
+      (as-> world $
+            (game/set-gesture $ player hand gesture)
+            (test-game-resolution $))
+      world)))
