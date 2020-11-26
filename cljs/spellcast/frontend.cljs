@@ -31,6 +31,7 @@
                        10 "hp low"
                        14 "hp damaged"
                        "hp full")]
+    ^{:key (str "status-pane." who)}
     [:td.status
      [:pre "Health: " hp
       (when (me? who) [:span {:class health-class} " ❤"])
@@ -49,8 +50,8 @@
             ; Make sure the current player always sorts first
             (sort-by (fn [[who _]] (if (me? who)  "" (name who))) $)
             [:<>
-             (for [[_who p] $]
-               ; ^{:key (str who ".statline")}
+             (for [[who p] $]
+               ^{:key (str "status-pane." who)}
                (status-pane-for-wizard p))]))))
 
 (defn init [player]

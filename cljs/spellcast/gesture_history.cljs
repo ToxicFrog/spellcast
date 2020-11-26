@@ -15,20 +15,21 @@
                       (take histsize)
                       reverse
                       (map-indexed vector))]
+    ^{:key (str "gesture-history-table." who)}
     [:td
      [:table.gesture-history
       [:tbody
-       ; ^{:key (str who "-gestures-0")}
        [:tr [:th {:col-span 2} who]]
        (for [[n gesture] gestures]
-        ; ^{:key (str who "-gestures-" n)}
         (if (and (= me who) (= n (dec histsize)))
           ; last row of the history table and it's the history table for the current player
           ; TODO this is ugly, clean it up somehow
+          ^{:key (str "gesture-history-table." who "." n)}
           [:tr
            [:td.pickable-gesture (gesture-img (gesture :left) "left" true)]
            [:td.pickable-gesture (gesture-img (gesture :right) "right" true)]]
           ; otherwise, not last row and/or gestures for other players
+          ^{:key (str "gesture-history-table." who "." n)}
           [:tr
            [:td (gesture-img (gesture :left) "left" false)]
            [:td (gesture-img (gesture :right) "right" false)]]))
@@ -45,6 +46,5 @@
             (sort-by (fn [[who _]] (if (= me who)  "" (name who))) $)
             [:<>
              (for [[_who p] $]
-               ; ^{:key (str who ".gestures")}
                (gesture-table-for-wizard me p))]))))
 
