@@ -15,12 +15,13 @@
       (let [url (str path "/" stamp)
             response (<! (http/get url {:with-credentials? true}))
             success (= (response :status) 200)]
-        (println ">> " url "\n" response)
         (if success
           (do
             (reset! atom (response :body))
             (js/setTimeout poll 100 path (get-in response [:headers "x-stamp"]) atom))
           (do
+            (println "Error reading " url "from server:")
+            (prn response)
             (reset! atom nil)
             (js/setTimeout poll 5000 path 0 atom)))))
     atom))

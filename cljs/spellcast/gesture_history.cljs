@@ -43,7 +43,7 @@
       [:td "Error loading gesture history!"]
       (as-> @players $
             ; Make sure the current player always sorts first
-            (sort-by (fn [[who _]] (if (= me who)  "" (name who))) $)
+            (sort-by (fn [[who _]] (if (= me (name who))  "" (name who))) $)
             [:<>
              (for [[_who p] $]
                (gesture-table-for-wizard me p))]))))

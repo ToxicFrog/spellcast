@@ -48,7 +48,7 @@
       [:td "Error loading player status"]
       (as-> @players $
             ; Make sure the current player always sorts first
-            (sort-by (fn [[who _]] (if (me? who)  "" (name who))) $)
+            (sort-by (fn [[who _]] (if (me? (name who))  "" (name who))) $)
             [:<>
              (for [[who p] $]
                ^{:key (str "status-pane." who)}
