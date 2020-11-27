@@ -49,6 +49,11 @@
 (defmethod dispatch-event [:ingame :BEGIN]
   ([world _phase _event] world))
 
+(defmethod dispatch-event [:ingame :INFO]
+  ([_world _phase _event]
+   {:when-ready "Waiting for opponents..."
+    :when-unready "Submit Gestures"}))
+
 (defmethod dispatch-event [:ingame :END]
   ([world _phase _event] world))
 

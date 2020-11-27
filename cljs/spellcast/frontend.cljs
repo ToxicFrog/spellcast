@@ -59,7 +59,8 @@
   (set! me player)
   (reagent.dom/render [log-view] ($ "#log"))
   (picker/init ($ "#gesture-picker"))
-  (button/init ($ "#ready-button"))
+  (if-let [btn ($ "#ready-button")]
+    (button/init ($ "#ready-button")))
   ; (reagent.dom/render [gesture-picker "left" "nothing"] ($ "#gesture-picker"))
   (let [players (net/poll "/data/players")]
     (reagent.dom/render [history/render player players] ($ "#gesture-history"))

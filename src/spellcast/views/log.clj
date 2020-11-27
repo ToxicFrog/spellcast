@@ -10,6 +10,7 @@
     [spellcast.data.game :as game]
     [spellcast.data.player :refer [Player]]
     [spellcast.world :as world]
+    [spellcast.phase.common :as phase]
     ))
 
 (defn long-poll
@@ -29,5 +30,17 @@
   In particular, this means that the :gestures table for each player is filtered according to what the querent is allowed to see."
   [player stamp]
   (long-poll #(game/get-filtered-players % player) stamp))
+
+(defn- ready-info
+  "Get the full structure describing player readiness info from the world, for use with watch."
+  [world player]
+  (assoc (phase/phase-info world)
+    :ready (-> world (game/get-player player) :ready)))
+
+(defn ready
+  "Get information about the player's readiness state, and what text should be displayed for the ready/unready states."
+  [player stamp]
+  (when player
+    (long-poll #(ready-info % player) stamp)))
 
 (def page log)

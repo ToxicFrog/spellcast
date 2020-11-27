@@ -41,6 +41,8 @@
        (views.log/page (logged-in request) index))
   (GET "/data/players/:index" [index :<< as-int :as request]
        (views.log/players (logged-in request) index))
+  (GET "/data/ready/:index" [index :<< as-int :as request]
+       (views.log/ready (logged-in request) index))
   ; Event receptor
   (POST "/game/:evt" [evt :as request]
        (world/POST! (logged-in request) request (request :body)))

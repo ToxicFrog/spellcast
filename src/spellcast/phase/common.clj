@@ -29,7 +29,7 @@
 
 (defmulti dispatch-event dispatcher)
 
-(defmethod dispatch-event :default :- Game
+(defmethod dispatch-event :default ; :- Game
   ; Server tried to fire an event that there is no mapping for in the current
   ; phase.
   ([world _phase _event] world)
@@ -43,6 +43,9 @@
        (r/status 400)
        (r/content-type "text/plain")
        (throw+))))
+
+(defn phase-info [world]
+  (dispatch-event world (world :phase) :INFO))
 
 (defn post-log
   "Add a chat message from the given player."

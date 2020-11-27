@@ -14,6 +14,11 @@
 (defmethod dispatch-event [:postgame :log]
   [world player _ body] (phase-common/post-log world player body))
 
+(defmethod dispatch-event [:postgame :INFO]
+  ([_world _phase _event]
+   {:when-ready "Game over!"
+    :when-unready "Game over!"}))
+
 ; TODO: queries from the client about what the action button should say should
 ; return "game over" or something.
 ; (defmethod dispatch [:postgame :BEGIN]

@@ -35,9 +35,7 @@
       [:tr#button-row
        (if player
          [:td#ready-button.large [:button {:disabled true} "LOADING"]]
-         [:td.large
-          [:button.spectating {:disabled true} "SPECTATING"]
-          [:div#ready-button {:style "display: none;"} ]])
+         [:td.large [:button.spectating {:disabled true} "SPECTATING"]])
        [:td.small [:img {:src "/img/spellbook2.svg" :style "width: 1.5em"}]]
        [:td.small [:img {:src "/img/help.svg" :style "width 1.5em"}]]
        ]]

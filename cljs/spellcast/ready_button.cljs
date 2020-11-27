@@ -10,7 +10,7 @@
   "The control atom for the ready button. Holds information about:
   - whether or not the player is ready
   - what text to display when they are or are not ready"
-  (net/poll "/data/phase-info"))
+  (net/poll "/data/ready"))
 
 (defn send-ready [ready?]
   (net/post "/game/ready" ready?))

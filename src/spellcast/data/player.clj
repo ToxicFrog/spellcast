@@ -43,6 +43,9 @@
   {:name s/Str
    :pronouns Pronouns
    :hp s/Int
+   ; Whether or not the player is ready to proceed, i.e. whether they are satisfied
+   ; with the gestures they've selected and so forth.
+   :ready s/Bool
    ; TODO right now this just displays unconditionally, but in practice each turn
    ; of gestures needs to be annotated with who it's visible to; gestures currently
    ; being entered are visible only to the owner until the collect-gestures phase
@@ -70,6 +73,7 @@
   {:name (params :name)
    :pronouns (-> params :pronouns keyword)
    :hp hp
+   :ready false
    ; for testing -- initialize with random gestures
    ;:gestures []
    :gestures (take 4 (repeatedly random-gesture))

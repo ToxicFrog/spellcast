@@ -7,17 +7,22 @@
              :refer [trace debug info warn error fatal
                      tracef debugf infof warnf errorf fatalf]])
   (:require
-    [ring.util.response :as r]
-    [spellcast.data.game :as game]
-    [spellcast.data.player :as player :refer [->Player]]
-    [spellcast.logging :refer [log]]
-    [spellcast.phase.common :as phase-common :refer [dispatch-event]]
-    [spellcast.views.join :as views.join]
+    [spellcast.phase.common :as phase :refer [dispatch-event]]
     ))
 
 ; Chat handlers common to all phases.
 (defmethod dispatch-event [:pregame :log]
-  [world player _ body] (phase-common/post-log world player body))
+  [world player _ body] (phase/post-log world player body))
+
+(defmethod dispatch-event [:pregame :INFO]
+  [world _phase _event]
+  (let [label (str "Waiting for players ("
+                 (-> world :players count)
+                 "/"
+                 (-> world :settings :max-players)
+                 ")")]
+    {:when-ready label
+     :when-unready label}))
 
 ; (defmethod dispatch [:pregame :log]
 ;   ([world player _] (phase-common/get-log world player))
@@ -28,13 +33,3 @@
 ;   (if (= (-> world :players count) (-> world :settings :max-players))
 ;     (assoc world :phase :ingame)
 ;     world))
-
-; (defmethod POST [:pregame :BEGIN]
-;   ([world _]
-;    (println "Entering pregame phase...")
-;    world))
-
-; (defmethod dispatch [:pregame :END]
-;   ([world _]
-;    (println "Leaving pregame phase...")
-;    world))

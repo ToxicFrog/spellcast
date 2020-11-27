@@ -34,6 +34,7 @@
   :ring {:handler spellcast.core/request-handler
          :init spellcast.core/init
          :destroy spellcast.core/destroy}
+  :repl-options {:init-ns spellcast.core}
   :cljsbuild
   {:builds [{:source-paths ["cljs"]
              :jar true
