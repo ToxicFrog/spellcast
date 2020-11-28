@@ -32,8 +32,10 @@
          (logged-in request) (r/redirect "/game")
          :else (r/redirect "/join")))
   ; Display the join-game page, or handle a join request
-  (GET "/join" request (views.join/get request))
+  (GET "/join" request (views.join/page request))
   (POST "/join" request (views.join/post request))
+  ; (POST "/join" request
+  ;       (world/POST! nil (assoc request :evt "join") (request :body)))
   ; Getters for the in-game UI and game data.
   (GET "/game" request (views.game/page request (logged-in request)))
   (GET "/spectate" request (views.game/page request nil))
@@ -96,6 +98,7 @@
         (and
           (not player)
           (not= "/join" uri)
+          ; (not (string/starts-with uri "/join/"))
           (not= "/spectate" uri))
         {:status 302 :headers {"Location" "/join"} :body ""}
         ; players who are logged in can't access /join, and should be redirected
