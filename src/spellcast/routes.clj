@@ -67,13 +67,14 @@
 
 (defn wrap-session-debug [next-handler]
   (fn [{:keys [request-method uri session headers params body] :as request}]
-    (debug ">>" request-method uri session)
+    (let [player (get session :name "(spectator)")]
+      (debug player ">>" request-method uri session)
       ; "\n -headers" headers
       ; "\n -params" params
       ; "\n -body" body)
-    (let [response (next-handler request)]
-      (debug "<<" (response :status) uri) ;(dissoc response :headers))
-      response)))
+      (let [response (next-handler request)]
+        (debug player "<<" (response :status) request-method uri) ;(dissoc response :headers))
+        response))))
 
 (defn wrap-session-redirect [next-handler]
   (fn [request]
