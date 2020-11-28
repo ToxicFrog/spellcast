@@ -6,7 +6,7 @@
              :refer [trace debug info warn error fatal
                      tracef debugf infof warnf errorf fatalf]])
   (:require
-    [spellcast.data.player :as player :refer [Player VisFilter Gesture Hand]]
+    [spellcast.data.player :as player :refer [Player ->Player Pronouns VisFilter Gesture Hand]]
     ))
 
 (defschema LogMessage
@@ -67,10 +67,11 @@
 
 (defn add-player :- Game
   "Add a new player to the game. Throws if someone with that name is already present."
-  [world :- Game, player :- Player]
-  (if (contains? (world :players) (player :name))
-    (throw (IllegalArgumentException. (str "A player named " (player :name) " is already in the arena.")))
-    (assoc-in world [:players (player :name)] player)))
+  [world :- Game, name :- s/Str, pronouns :- Pronouns]
+  (if (contains? (world :players) name)
+    (throw (IllegalArgumentException. (str "A player named " name " is already in the arena.")))
+    (assoc-in world [:players name]
+      (->Player {:name name :pronouns pronouns :hp (-> world :settings :max-hp)}))))
 
 (defn get-player :- (s/maybe Player)
   "Return a player with the given name, or nil."

@@ -64,21 +64,18 @@
    })
 
 (defschema PlayerParams
-  {:name s/Str :pronouns s/Str
-   s/Keyword s/Str})
+  {:name s/Str :pronouns s/Keyword :hp s/Int})
 
 (defn ->Player :- Player
   "Create a new Player object."
-  [params :- PlayerParams, hp :- s/Int]
-  {:name (params :name)
-   :pronouns (-> params :pronouns keyword)
-   :hp hp
-   :ready false
-   ; for testing -- initialize with random gestures
-   ;:gestures []
-   :gestures (take 4 (repeatedly random-gesture))
-   :effects {:protection 3 :haste 1}
-   })
+  [params :- PlayerParams]
+  (assoc params
+    :ready false
+    ; for testing -- initialize with random gestures
+    ;:gestures []
+    :gestures (take 4 (repeatedly random-gesture))
+    :effects {:protection 3 :haste 1}
+    ))
 
 (defn- filter-gesture
   [name record]

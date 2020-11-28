@@ -11,7 +11,6 @@
     [ring.util.response :as r]
     [slingshot.slingshot :refer [try+ throw+]]
     [spellcast.data.game :as game]
-    [spellcast.data.player :refer [->Player]]
     [spellcast.logging :refer [log]]
     [spellcast.world :as world]
     ))
@@ -20,6 +19,7 @@
   {"collision" "A player with that name is already in the game."
    "full" "The game is full."
    "toolate" "The game has already started."
+   "noname" "Please enter a name."
    "ok" nil})
 
 (defn- join-page [message]
@@ -44,34 +44,32 @@
 
 (defn page [request]
   (if (-> (world/state) :phase (not= :pregame))
-    (-> "A game is already in progress."
-        r/response
-        (r/status 409)
-        (r/content-type "text/plain"))
+    (join-page "toolate")
     (join-page (get-in request [:params :message]))))
 
-(defn- attempt-join [world params]
-  (let [player (->Player params (-> world :settings :max-hp))]
+(defn- attempt-join [world {:keys [name pronouns] :as params}]
     (cond
-      (not= :pregame (world :phase))
-      (throw+ "The game is already in progress.")
-      (when (game/get-player world (player :name)))
-      (throw+ "A player with that name is already in the game.")
-      :else
-      (-> world
-          (game/add-player player)
-          (log {:player (player :name)}
-            :all "{{player}} has joined the game.")))))
+      (not= :pregame (world :phase)) (throw+ "toolate")
+      (= (count (world :players)) (-> world :settings :max-players)) (throw+ "full")
+      (empty? name) (throw+ "noname")
+      (game/get-player world name) (throw+ "collision")
+      :else (-> world
+                (game/add-player name (keyword pronouns))
+                (log {:player name}
+                  :all "--- {{player}} has joined the game."))))
 
 (defn post
   ; On POST, attempt to join the player to the game.
+  ; We handle this here rather than through the normal world/POST! mechanism
+  ; because we need to construct a special response -- this is a "user-facing"
+  ; request rather than an XHR and we need to redirect to the right place and
+  ; provide meaningful error messages even when it's called at the wrong time.
   [request]
   (let [session (request :session)]
     (try+
       (world/update! attempt-join (request :params))
       (-> (r/redirect "/game" 303)
-          (assoc :session
-            (assoc session :name (-> request :params :name))))
+          (assoc :session session)
+          (assoc-in [:session :name] (-> request :params :name)))
       (catch string? err
-        (error err)
-        (-> err r/response (r/status 400))))))
+        (r/redirect (str "/join?" err) 303)))))
