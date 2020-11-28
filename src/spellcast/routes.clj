@@ -77,7 +77,7 @@
 
 (defn wrap-session-redirect [next-handler]
   (fn [request]
-    (let [joined (-> request :session :name some?)
+    (let [player (-> request :session :name)
           uri (request :uri)]
       (cond
         ; debug requests do not require authentication
@@ -85,16 +85,21 @@
         ; game data requests don't either; they will serve spectator data to
         ; unauthenticated clients
         (string/starts-with? uri "/data") (next-handler request)
+        ; TODO: if we do a state reset on the server we end up with players
+        ; who are "logged in" but don't exist in the game state. We need to
+        ; invalidate their state and bounce them to /join
+        ; This may not be a problem in prod because it won't be possible to
+        ; restart the game in-place without the debug endpoints.
         ; players who aren't logged in are allowed to join or spectate only
         ; if they request anything else redirect them to /join
         (and
-          (not joined)
+          (not player)
           (not= "/join" uri)
           (not= "/spectate" uri))
         {:status 302 :headers {"Location" "/join"} :body ""}
         ; players who are logged in can't access /join, and should be redirected
         ; to /game instead
-        (and joined (= "/join" uri))
+        (and player (= "/join" uri))
         {:status 302 :headers {"Location" "/game"} :body ""}
         ; Everything else falls through to the rest of the handlers.
         :else (next-handler request)))))
