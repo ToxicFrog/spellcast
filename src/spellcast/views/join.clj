@@ -42,12 +42,6 @@
         (r/content-type "text/plain"))
     (join-page)))
 
-(defn- check-game-start [world]
-  (if (= (-> world :settings :max-players) (-> world :players count))
-    ; TODO run phase-entry code
-    (assoc world :phase :ingame)
-    world))
-
 (defn- attempt-join [world params]
   (let [player (->Player params (-> world :settings :max-hp))]
     (cond
@@ -59,8 +53,7 @@
      (-> world
          (game/add-player player)
          (log {:player (player :name)}
-           :all "{{player}} has joined the game.")
-         check-game-start))))
+           :all "{{player}} has joined the game.")))))
 
 (defn post
   ; On POST, attempt to join the player to the game.

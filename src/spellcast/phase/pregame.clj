@@ -21,4 +21,7 @@
                   ")")]
       {:when-ready label
        :when-unready label}))
-  )
+
+  (reply NEXT [world]
+    (when (= (-> world :settings :max-players) (-> world :players count))
+      :ingame)))

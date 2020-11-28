@@ -13,6 +13,7 @@
 (defphase postgame
   (reply BEGIN [world] world)
   (reply END [world] world)
+  (reply NEXT [_] nil)
   (reply INFO [_world]
-   {:when-ready "Game over!"
-    :when-unready "Game over!"}))
+    {:when-ready "Game over!"
+     :when-unready "Game over!"}))

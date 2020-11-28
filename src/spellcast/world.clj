@@ -35,14 +35,16 @@
 (defn- updater
   [world f rest]
   (debug "updater" f (world :phase))
-  (let [world' (apply f world rest)]
-    (if (= (world :phase) (world' :phase))
+  (let [world' (apply f world rest)
+        next (phase/dispatch-event world' (world' :phase) :NEXT)]
+    (when next
+      (info "New phase:" (world :phase) "->" next))
+    (if (not next)
       world'
-      (do
-        (info "Game state phase transition:" (world :phase) "->" (world' :phase))
-        (-> world'
-          (phase/dispatch-event (world :phase) :END)
-          (phase/dispatch-event (world' :phase) :BEGIN))))))
+      (-> world'
+          (phase/dispatch-event (world' :phase) :END)
+          (assoc :phase next)
+          (phase/dispatch-event next :BEGIN)))))
 
 (defn update!
   "Update the game state. Same signature as swap! except that the atom parameter is implicit.
