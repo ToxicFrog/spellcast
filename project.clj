@@ -10,6 +10,7 @@
 
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [org.clojure/clojurescript "1.10.773"]
+                 [org.clojure/data.json "1.0.0"]
                  [caribou/antlers "0.6.1"]
                  [com.taoensso/timbre "4.10.0"]
                  [compojure "1.6.1" :exclusions [ring/ring-core]]
