@@ -61,7 +61,8 @@
     (update! phase/dispatch-event player request body)
     (r/response "")
     (catch r/response? resp resp)
-    (catch string? s (-> (r/response s) (r/status 500)))))
+    ; (catch string? s (-> (r/response s) (r/status 500)))
+    ))
 
 (defn watch
   "Watch the game state for changes. Given a function that extracts the interesting part of the game state and the hash of the old version, blocks until (-> @world key-fn hash) is different from the old hash value, then returns (key-fn @world)."

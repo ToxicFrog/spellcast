@@ -32,7 +32,8 @@
 (defmethod dispatch-event :default ; :- Game
   ; Server tried to fire an event that there is no mapping for in the current
   ; phase.
-  ([world _phase _event] world)
+  ([_world phase event]
+   (throw+ (str "No handler for internal event " event " defined in phase " phase)))
   ; Client sent a request that the current game phase doesn't understand.
   ([world _player request _body]
    (warn "Bad request:" request)
