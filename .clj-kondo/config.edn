@@ -1,13 +1,13 @@
 {:linters
- {:unsorted-required-namespaces {:level :warning}
+ {:use {:level :off}
+  :unsorted-required-namespaces {:level :warning}
   :unused-namespace {:exclude [schema.core clojure.pprint taoensso.timbre]}
   :unused-referred-var {:exclude {clojure.pprint [pprint]
                                   schema.core [def defn defmethod defrecord defschema fn letfn]
                                   taoensso.timbre [trace debug info warn error fatal
                                                    tracef debugf infof warnf errorf fatalf]}}
-  ; :unresolved-namespace {:level :off}
-  :use {:level :off}}
- ; :lint-as
- ; {user/ns+ clojure.core/ns
-  ; spellcast.state.game/defschema clojure.core/def}
+  :unresolved-symbol {:exclude [(spellcast.phase.common/defphase)]}
+  }
+ ; :unresolved-namespace {:level :off}
+ ; :lint-as {spellcast.spellbook.def/defspell clojure.core/defn}
  }

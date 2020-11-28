@@ -7,26 +7,12 @@
              :refer [trace debug info warn error fatal
                      tracef debugf infof warnf errorf fatalf]])
   (:require
-    [spellcast.phase.common :as phase-common :refer [dispatch-event]]
+    [spellcast.phase.common :as phase-common :refer [defphase]]
     ))
 
-; Chat handlers common to all phases.
-(defmethod dispatch-event [:postgame :log]
-  [world player _ body] (phase-common/post-log world player body))
-
-(defmethod dispatch-event [:postgame :INFO]
-  ([_world _phase _event]
+(defphase postgame
+  (reply BEGIN [world] world)
+  (reply END [world] world)
+  (reply INFO [_world]
    {:when-ready "Game over!"
     :when-unready "Game over!"}))
-
-; TODO: queries from the client about what the action button should say should
-; return "game over" or something.
-; (defmethod dispatch [:postgame :BEGIN]
-;   ([world _]
-;    (println "Entering postgame phase...")
-;    world))
-
-; (defmethod dispatch [:postgame :END]
-;   ([world _]
-;    (println "Leaving postgame phase...")
-;    world))

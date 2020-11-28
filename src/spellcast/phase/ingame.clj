@@ -10,12 +10,8 @@
   (:require
     [spellcast.data.game :as game]
     [spellcast.logging :refer [log]]
-    [spellcast.phase.common :as phase-common :refer [dispatch-event]]
+    [spellcast.phase.common :as phase-common :refer [defphase]]
     ))
-
-; Chat handlers common to all phases.
-(defmethod dispatch-event [:ingame :log]
-  [world player _request body] (phase-common/post-log world player body))
 
 (defn- enter-arena [world player]
   (log world {:player player}
@@ -46,17 +42,6 @@
           (assoc :phase :postgame))
       world)))
 
-(defmethod dispatch-event [:ingame :BEGIN]
-  ([world _phase _event] world))
-
-(defmethod dispatch-event [:ingame :INFO]
-  ([_world _phase _event]
-   {:when-ready "Waiting for opponents..."
-    :when-unready "Submit Gestures"}))
-
-(defmethod dispatch-event [:ingame :END]
-  ([world _phase _event] world))
-
 (defn- valid-gesture
   "Perform validation on an attempted gesture set request. The rules are:
   - no setting of internal gestures (:antispell or :unseen)
@@ -68,8 +53,14 @@
       (and has-knife? (= :knife gesture)) false
       :else true)))
 
-(defmethod dispatch-event [:ingame :gesture]
-  [world player _request {:keys [hand gesture]}]
+(defphase ingame
+ (reply BEGIN [world] world)
+ (reply END [world] world)
+ (reply INFO [world]
+   {:when-ready "Waiting for opponents..."
+    :when-unready "Submit Gestures"})
+
+ (event gesture [world player {:keys [hand gesture]}]
   (let [hand (keyword hand)
         gesture (keyword gesture)]
     (if (valid-gesture world player gesture)
@@ -77,3 +68,4 @@
             (game/set-gesture $ player hand gesture)
             (test-game-resolution $))
       world)))
+ )
