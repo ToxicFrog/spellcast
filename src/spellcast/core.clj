@@ -25,9 +25,9 @@
    :report "RPT"})
 
 (defn init-logging! []
+  (timbre/set-level! (keyword (or (System/getenv "LOG_LEVEL") "info")))
   (timbre/merge-config!
-    {;:output-fn #(-> % :msg_ deref str)
-     :output-fn
+    {:output-fn
      (fn logger [data]
        (let [{:keys [level #_vargs msg_ ?ns-str ?file
                      timestamp_ ?line]} data]
@@ -39,10 +39,11 @@
            )))
      :timestamp-opts {:pattern "HH:mm:ss"}}))
 
+(init-logging!)
+
 (defn init []
   (io.aviso.repl/install-pretty-exceptions)
   (s/set-fn-validation! true)
-  (init-logging!)
   (info "spellcast is starting")
   (world/reset-game!)
   (world/log! {} :all "Game starts."))
