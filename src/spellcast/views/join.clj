@@ -45,7 +45,7 @@
 (defn page [request]
   (if (-> (world/state) :phase (not= :pregame))
     (join-page "toolate")
-    (join-page (get-in request [:params :message]))))
+    (join-page (get-in request [:params :message] "ok"))))
 
 (defn- attempt-join [world {:keys [name pronouns] :as params}]
     (cond
@@ -72,4 +72,7 @@
           (assoc :session session)
           (assoc-in [:session :name] (-> request :params :name)))
       (catch string? err
+        ; If it's an error we have explicit handling for, attempt-join will throw an error code string,
+        ; and we bounce the player back to /join with a query-string parameter telling it which
+        ; error code to display.
         (r/redirect (str "/join?" err) 303)))))

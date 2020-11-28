@@ -20,15 +20,7 @@
 
 (defschema GamePhase
   "Which phase of the game we're in, which in turn determines which events are legal from players and how they are handled."
-  (s/enum
-    ; waiting for all players to connect; ends by placing all players in the
-    ; arena and moving to ingame
-    :pregame
-    ; test phase that arbitrarily picks a winner and then moves to postgame
-    :ingame
-    ; permits viewing the log and talking but not entering any actions
-    :postgame
-    ))
+  (s/enum :pregame :collect-gestures :postgame))
 
 (defschema Game
   {:players {s/Str Player}
@@ -94,3 +86,21 @@
         (:gestures $)
         (first $)
         [(:left $) (:right $)]))
+
+(defn all-players? :- s/Bool
+  [world :- Game, pred? :- (s/=> Player s/Bool)]
+  (->> world :players vals
+       (map pred?)
+       (reduce #(and %1 %2))))
+
+(defn pget :- s/Any
+  [world :- Game, name :- s/Str, keys :- s/Any, & default]
+  (if (seq? keys)
+    (get-in world (concat [:players name] keys) (first default))
+    (get-in world [:players name keys] (first default))))
+
+(defn pset :- Game
+  [world :- Game, name :- s/Str, keys :- s/Any, val :- s/Any]
+  (if (seq? keys)
+    (assoc-in world (concat [:players name] keys) val)
+    (assoc-in world [:players name keys] val)))
