@@ -87,3 +87,8 @@
   "Given a player and the name of another player viewing them, return a view of that player with gesture information filtered according to its visibility rules."
   [player viewer]
   (update player :gestures (partial map (partial filter-gesture viewer))))
+
+(defn new-gestures :- Player
+  [{:keys [name] :as player} :- Player]
+  (update player :gestures
+    #(conj % {:left :nothing :right :nothing :vis #{name}})))

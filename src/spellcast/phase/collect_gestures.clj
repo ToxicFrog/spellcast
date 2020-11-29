@@ -1,5 +1,5 @@
 (ns spellcast.phase.collect-gestures
-  ""
+  "Collects gestures from all active players. At the end of this phase, all players who are capable of entering gestures for this turn will have done so, and their gestures will be recorded in the head of the :gestures list."
   (:refer-clojure :exclude [def defn defmethod defrecord fn letfn])
   (:require [clojure.pprint :refer [pprint]])
   (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
@@ -27,7 +27,8 @@
       :else true)))
 
 (defphase collect-gestures
-  (reply BEGIN [world] world)
+  (reply BEGIN [world]
+    (game/for-each-player world player/new-gestures))
   (reply END [world] world)
 
   (reply INFO [world]

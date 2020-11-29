@@ -20,7 +20,7 @@
 
 (defschema GamePhase
   "Which phase of the game we're in, which in turn determines which events are legal from players and how they are handled."
-  (s/enum :pregame :collect-gestures :postgame))
+  (s/enum :pregame :collect-gestures :select-spells :postgame))
 
 (defschema Game
   {:players {s/Str Player}
@@ -86,6 +86,10 @@
         (:gestures $)
         (first $)
         [(:left $) (:right $)]))
+
+(defn for-each-player :- Game
+  [world :- Game, f :- (s/=> Player Player)]
+  (update world :players (partial map-vals f)))
 
 (defn all-players? :- s/Bool
   [world :- Game, pred? :- (s/=> Player s/Bool)]
