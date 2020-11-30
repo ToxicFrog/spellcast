@@ -27,7 +27,7 @@
   "A visibility filter for gestures and other data elements."
   (s/cond-pre
     #{s/Str}
-    (s/=> (s/maybe s/Str) s/Bool)))
+    (s/=> s/Bool, (s/maybe s/Str))))
 
 (defschema GestureRecord
   "A record of the player's gestures for a given turn."
@@ -46,11 +46,7 @@
    ; Whether or not the player is ready to proceed, i.e. whether they are satisfied
    ; with the gestures they've selected and so forth.
    :ready s/Bool
-   ; TODO right now this just displays unconditionally, but in practice each turn
-   ; of gestures needs to be annotated with who it's visible to; gestures currently
-   ; being entered are visible only to the owner until the collect-gestures phase
-   ; is over, gestures made while invisible are only ever visible to the owner,
-   ; gestures are never visible to someone who was blind when they were being made, etc
+   ; History of gestures, most recent gesture first.
    :gestures [GestureRecord]
    ; map from effect type to duration
    ; decrements at end of turn, so 1 means the effect will expire at the end of
@@ -91,4 +87,4 @@
 (defn new-gestures :- Player
   [{:keys [name] :as player} :- Player]
   (update player :gestures
-    #(conj % {:left :nothing :right :nothing :vis #{name}})))
+    #(cons {:left :nothing :right :nothing :vis #{name}} %)))

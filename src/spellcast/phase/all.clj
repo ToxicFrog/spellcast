@@ -7,7 +7,7 @@
     - new players can join until a quorum is reached
   - collect-gestures
     - all active players need to send gestures and then signal readiness
-  - disambiguate-spells
+  - select-spells
     - figure out which spell(s) each player is casting and buffer them
   - execute-spells
     - run the spells that were buffered in the previous phase
@@ -17,4 +17,6 @@
     - a winner has been chosen, players can chat for a bit before game exit"
   (:require [spellcast.phase.pregame]
             [spellcast.phase.collect-gestures]
+            [spellcast.phase.select-spells]
+            [spellcast.phase.execute-spells]
             [spellcast.phase.postgame]))

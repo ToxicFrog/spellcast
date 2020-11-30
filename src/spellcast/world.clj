@@ -35,16 +35,21 @@
 (defn- updater
   [world f rest]
   (debug "updater" f (world :phase))
-  (let [world' (apply f world rest)
-        next (phase/dispatch-event world' (world' :phase) :NEXT)]
-    (when next
-      (info "New phase:" (world :phase) "->" next))
-    (if (not next)
-      world'
-      (-> world'
-          (phase/dispatch-event (world' :phase) :END)
-          (assoc :phase next)
-          (phase/dispatch-event next :BEGIN)))))
+  (loop [world' (apply f world rest)]
+    (let [next (phase/dispatch-event world' (world' :phase) :NEXT)]
+      (when next
+        (info "New phase:" (world' :phase) "->" next))
+      (if (not next)
+        world'
+        (-> world'
+            (phase/dispatch-event (world' :phase) :END)
+            (assoc :phase next)
+            (phase/dispatch-event next :BEGIN)
+            ; We've now done a phase transition, but it's possible that the next phase does all its
+            ; work in BEGIN/END and doesn't need to wait for more updates. So we recur back
+            ; to the start of the loop with the world in the new phase and see if NEXT gives
+            ; us another phase to progress to.
+            (recur))))))
 
 (defn update!
   "Update the game state. Same signature as swap! except that the atom parameter is implicit.

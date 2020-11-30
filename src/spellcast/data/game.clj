@@ -20,12 +20,17 @@
 
 (defschema GamePhase
   "Which phase of the game we're in, which in turn determines which events are legal from players and how they are handled."
-  (s/enum :pregame :collect-gestures :select-spells :postgame))
+  (s/enum :pregame :postgame
+          :collect-gestures :select-spells :execute-spells :cleanup))
 
 (defschema Game
   {:players {s/Str Player}
    :settings GameSettings
    :phase GamePhase
+   ; Cast buffer. During spell configuration and execution this is filled with the
+   ; spells being cast.
+   ; TODO: this should be Spell
+   :casting [s/Any]
    :log [LogMessage]})
 
 (defn ->Game :- Game
@@ -34,6 +39,7 @@
   {:players {}
    :settings settings
    :phase :pregame
+   :casting []
    :log []})
 
 (defn add-log :- Game
@@ -87,12 +93,17 @@
         (first $)
         [(:left $) (:right $)]))
 
-(defn for-each-player :- Game
-  [world :- Game, f :- (s/=> Player Player)]
+(defn map-players :- Game
+  [world :- Game, f :- (s/=> Player, Player)]
   (update world :players (partial map-vals f)))
 
+(defn reduce-players :- Game
+  "Takes a fn of [world player] => world and reduces the players across it, producing a new game state based on the state of the players."
+  [world :- Game, f :- (s/=> Game, Game Player)]
+  (reduce f world (-> world :players vals)))
+
 (defn all-players? :- s/Bool
-  [world :- Game, pred? :- (s/=> Player s/Bool)]
+  [world :- Game, pred? :- (s/=> s/Bool, Player)]
   (->> world :players vals
        (map pred?)
        (reduce #(and %1 %2))))

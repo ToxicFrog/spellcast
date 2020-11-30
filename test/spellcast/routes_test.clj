@@ -33,8 +33,8 @@
      blu (post blu "/game/log" {:text "boop boop boop"})
      blu (post blu "/game/gesture" {:gesture :palm :hand :left})
      blu (post blu "/game/gesture" {:gesture :palm :hand :right})
-     red (post red "/game/gesture" {:gesture :digit :hand :left})
-     red (post red "/game/gesture" {:gesture :snap :hand :right})
+     red (post red "/game/gesture" {:gesture :palm :hand :left})
+     red (post red "/game/gesture" {:gesture :knife :hand :right})
      blu (post blu "/game/ready" true)
      red (post red "/game/ready" true)
      ; and now we should be in postgame

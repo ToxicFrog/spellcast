@@ -28,7 +28,7 @@
 
 (defphase collect-gestures
   (reply BEGIN [world]
-    (game/for-each-player world player/new-gestures))
+    (game/map-players world player/new-gestures))
   (reply END [world] world)
 
   (reply INFO [world]
