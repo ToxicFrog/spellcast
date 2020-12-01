@@ -108,7 +108,14 @@
   [(spell "Surrender" [:palm2]
      :target self
      :invoke default-invoke-message
-     :resolve default-resolve)
+     :resolve (fn [world spell]
+                (pprint spell)
+                (let [target (-> spell :params :target)]
+                  (-> world
+                      (assoc-in [:players target :hp] 0)
+                      (log {:target target}
+                        target "You have surrendered!"
+                        :else "{{target}} has surrendered!")))))
    (spell "Shield" [:palm]
      :target self
      :invoke default-invoke-message

@@ -9,6 +9,7 @@
   (:require
     [spellcast.data.game :as game]
     [spellcast.data.player :as player]
+    [spellcast.logging :refer [log]]
     [spellcast.phase.common :as phase-common :refer [defphase]]
     ))
 
@@ -28,7 +29,12 @@
 
 (defphase collect-gestures
   (reply BEGIN [world]
-    (game/map-players world player/new-gestures))
+    (-> world
+        (update :turn inc)
+        (log {:turn (inc (:turn world))}
+          :all "--- Turn {{turn}} starts.")
+        (game/map-players player/new-gestures)
+        (game/map-players #(assoc % :ready false))))
   (reply END [world] world)
 
   (reply INFO [world]

@@ -7,11 +7,19 @@
              :refer [trace debug info warn error fatal
                      tracef debugf infof warnf errorf fatalf]])
   (:require
+    [spellcast.data.game :as game]
     [spellcast.phase.common :as phase-common :refer [defphase]]
     ))
 
+(defn- living? [player]
+  (> (:hp player) 0))
+
 (defphase postgame
-  (reply BEGIN [world] world)
+  (reply BEGIN [world]
+    (let [winner (:name (first (game/filter-players world living?)))]
+      (log world {:winner winner}
+        winner "You are victorious!"
+        :else "{{winner}} is victorious!")))
   (reply END [world] world)
   (reply NEXT [_] nil)
   (reply INFO [_world]

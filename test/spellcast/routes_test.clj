@@ -39,4 +39,5 @@
      red (post red "/game/ready" true)
      ; and now we should be in postgame
      red (get red "/data/log/0")
-     ]))
+     ]
+    true))

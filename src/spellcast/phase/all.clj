@@ -19,4 +19,5 @@
             [spellcast.phase.collect-gestures]
             [spellcast.phase.select-spells]
             [spellcast.phase.execute-spells]
+            [spellcast.phase.cleanup]
             [spellcast.phase.postgame]))

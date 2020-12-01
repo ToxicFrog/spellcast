@@ -27,6 +27,7 @@
   {:players {s/Str Player}
    :settings GameSettings
    :phase GamePhase
+   :turn s/Int
    ; Cast buffer. During spell configuration and execution this is filled with the
    ; spells being cast.
    ; TODO: this should be Spell
@@ -39,6 +40,7 @@
   {:players {}
    :settings settings
    :phase :pregame
+   :turn 0
    :casting []
    :log []})
 
@@ -101,6 +103,12 @@
   "Takes a fn of [world player] => world and reduces the players across it, producing a new game state based on the state of the players."
   [world :- Game, f :- (s/=> Game, Game Player)]
   (reduce f world (-> world :players vals)))
+
+(defn filter-players :- [Player]
+  [world :- Game, f :- (s/=> s/Bool, Player)]
+  (->> world :players
+       (map second)
+       (filter f)))
 
 (defn all-players? :- s/Bool
   [world :- Game, pred? :- (s/=> s/Bool, Player)]
