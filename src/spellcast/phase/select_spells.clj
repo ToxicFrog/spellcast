@@ -9,127 +9,12 @@
   (:require
     [spellcast.data.game :as game]
     [spellcast.data.player :as player]
+    [spellcast.data.spell]
+    [spellcast.data.spellbook]
+    [spellcast.spellbook.basic :refer [basic]]
     [spellcast.logging :refer [log]]
     [spellcast.phase.common :as phase-common :refer [defphase]]
     ))
-
-(comment
-(defschema TargetFilter
-  (s/=> Player s/Bool))
-
-(declare SpellFn)
-
-(defschema Spell
-  "A spell, as it exists in the spellbook."
-  {:name s/Str
-   ; Filtered over the set of possible targets in the world to produce the set of valid targets.
-   :target TargetFilter
-   ; Filtered over the set of possible targets in the world to produce the default target.
-   ; The first value that matches the filter will be used as the default, if there are more than one.
-   ; This can be used as, e.g., (spell "Counterspell" :target living? :default caster)
-   (s/optional-key :default) TargetFilter
-   ; The spell priority. Spells with lower priority go earlier in the execution phase.
-   :priority s/Int
-   ; The spell implementation.
-   ; Is passed the world state and
-   :on-cast (recursive #'SpellFn)
-   })
-
-(defschema SpellBuffer [Spell])
-
-(defschema SpellFn
-  (s/=> [Game SpellBuffer], Game SpellBuffer (recursive #'Spell)))
-
-);comment
-
-(defn- spell [name gestures & rest]
-  (apply assoc {:name name :gestures gestures} rest))
-
-; TODO everything here is kind of a mess with no clear idea of where we use caster/target
-; names and where we use the actual objects.
-; In prod we'll need to use names so that we can look up the current version of each
-; in the world, but this also means we need careful handling for monsters & elementals
-; since we can't look them up in the player table.
-; possibly we should move to entity IDs and just index by that, no lookups by name
-; at all, session map just holds an EID?
-(defn- default-invoke-message
-  [world {:keys [caster hand params name] :as spell}]
-  (let [handedness (condp = hand
-                     :left "the left hand"
-                     :right "the right hand"
-                     :both "both hands")
-        target (:target params)
-        target-str (cond
-                 (= :everything target) "over the arena"
-                 (= :nothing target) "up into the air"
-                 :else (str "at " target))
-        caster-obj (game/get-player world caster)
-        log-params {:spell name :handedness handedness :caster caster :target target-str
-                    :caster-obj caster-obj}]
-    (info "Writing invokation messages for" (:name spell) "into log...")
-    (cond
-      (= caster target)
-      (log world log-params
-        caster "You cast {{spell}} (with {{handedness}}) at yourself."
-        :else "{{caster}} casts {{spell}} (with {{handedness}}) at {{pronoun caster-obj :ref}}.")
-      ; HACK HACK HACK -- one wizard casting at another
-      ; in future this needs to properly handle casting at monsters, etc.
-      (string? target)
-      (log world log-params
-        caster "You cast {{spell}} (with {{handedness}}) {{target}}."
-        target "{{caster}} casts {{spell}} (with {{handedness}}) at you."
-        :else "{{caster}} casts {{spell}} (with {{handedness}} {{target}}.")
-      ; casting into the air/over the arena
-      (keyword? target)
-      (log world log-params
-        caster "You cast {{spell}} (with {{handedness}}) {{target-str}}."
-        :else "{{caster}} casts {{spell}} (with {{handedness}} {{target}}.")
-      :else
-      (log world log-params
-        :all "Something went horribly wrong.")
-      )))
-
-(defn- default-resolve
-  [world spell]
-  world)
-
-(defn- self [world spell]
-  (info "self-targeting" (:caster spell))
-  (:caster spell))
-
-(defn- enemy [world spell]
-  (let [caster (spell :caster)]
-    (->> world :players vals
-        (filter #(not= caster (:name %)))
-        first
-        :name)))
-
-(def spellbook
-  [(spell "Surrender" [:palm2]
-     :target self
-     :invoke default-invoke-message
-     :resolve (fn [world spell]
-                (pprint spell)
-                (let [target (-> spell :params :target)]
-                  (-> world
-                      (assoc-in [:players target :hp] 0)
-                      (log {:target target}
-                        target "You have surrendered!"
-                        :else "{{target}} has surrendered!")))))
-   (spell "Shield" [:palm]
-     :target self
-     :invoke default-invoke-message
-     :resolve default-resolve)
-   (spell "Stab" [:knife]
-     :target enemy
-     :invoke default-invoke-message
-     :resolve default-resolve)
-   ])
-
-(defn potential-spells
-  "Simple test function to turn gesture sequences into spells. Only ever returns one spell, only looks at the most recent gesture."
-  [gestures]
-  (get spellbook (first gestures)))
 
 (defn- doubled? [gesture] (->> gesture name last (= \2)))
 (defn- doubled [gesture] (keyword (str (name gesture) "2")))
@@ -174,7 +59,7 @@
   "Return the spell the given hand is casting."
   [player hand]
   (let [history (one-hand-history player hand)
-        spell (first (filter (partial spell-matches? history) spellbook))]
+        spell (first (filter (partial spell-matches? history) basic))]
     (println "which spell?" (:name player) hand spell)
     (cond
       (nil? spell) nil
@@ -201,10 +86,23 @@
       (= :both (left-spell :hand)) [left-spell]
       :else [left-spell right-spell])))
 
+(defn reify-option [world spell [key option]]
+  (prn 'reify-option key option spell)
+  ; FIXME ((:default option) world spell) is returning nil
+  (prn ((:default option) world spell))
+  [key ((:default option) world spell)])
+
 (defn- reify-spell
   [world caster spell]
-  (let [spell (assoc spell :caster caster)]
-    (assoc-in spell [:params :target] ((:target spell) world spell))))
+  (let [spell (assoc spell :caster caster)
+        options (:options spell)
+        config (->> options
+                    (map (partial reify-option world spell))
+                    (into {}))]
+    ; we don't have (:target spell) anymore, so the reifier needs to find it in :options instead
+    (println "reify-spell" caster spell)
+    (println "reify-spell-config" config)
+    (merge spell config)))
 
 (defn- prepare-spells
   "Prepare a player's spells for casting. Takes a player with gestures ready, returns a player with spells buffered.
