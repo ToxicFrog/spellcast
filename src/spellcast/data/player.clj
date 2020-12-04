@@ -6,7 +6,7 @@
              :refer [trace debug info warn error fatal
                      tracef debugf infof warnf errorf fatalf]])
   (:require
-    ; we don't need any other requires, but we need the (:require$ for the
+    ; we don't need any other requires, but we need the (:require) for the
     ; boilerplate inserter
     [schema.core]
     ))

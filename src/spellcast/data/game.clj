@@ -1,4 +1,5 @@
 (ns spellcast.data.game
+  "Types and functions related to the overall game state."
   (:refer-clojure :exclude [def defn defmethod defrecord fn letfn])
   (:require [clojure.pprint :refer [pprint]])
   (:require [schema.core :as s :refer [def defn defmethod defrecord defschema fn letfn]])
@@ -124,6 +125,6 @@
 
 (defn pset :- Game
   [world :- Game, name :- s/Str, keys :- s/Any, val :- s/Any]
-  (if (seq? keys)
+  (if (sequential? keys)
     (assoc-in world (concat [:players name] keys) val)
     (assoc-in world [:players name keys] val)))
