@@ -21,8 +21,8 @@
 
 (defschema GamePhase
   "Which phase of the game we're in, which in turn determines which events are legal from players and how they are handled."
-  (s/enum :pregame :postgame
-          :collect-gestures :select-spells :execute-spells :cleanup))
+  (s/enum :pregame :cleanup :postgame
+          :collect-gestures :select-spells :configure-spells :execute-spells))
 
 (defschema Game
   {:players {s/Str Player}
@@ -128,3 +128,9 @@
   (if (sequential? keys)
     (assoc-in world (concat [:players name] keys) val)
     (assoc-in world [:players name keys] val)))
+
+(defn pupdate :- Game
+  [world :- Game, name :- s/Str, keys :- s/Any, f :- s/Any, &rest]
+  (if (sequential? keys)
+    (apply update-in world (concat [:players name] keys) f rest)
+    (apply update-in world [:players name keys] f rest)))

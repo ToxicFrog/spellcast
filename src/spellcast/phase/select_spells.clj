@@ -63,8 +63,8 @@
     (println "which spell?" (:name player) hand spell)
     (cond
       (nil? spell) nil
-      (two-handed? spell) (assoc spell :hand :both)
-      :else (assoc spell :hand hand))))
+      (two-handed? spell) (assoc spell :hand :both :caster (:name player))
+      :else (assoc spell :hand hand :caster (:name player)))))
 
 ; In the final version this will take into account any questions the player has
 ; answered, and there will be a separate step in BEGIN that builds the question buffers.
@@ -86,34 +86,14 @@
       (= :both (left-spell :hand)) [left-spell]
       :else [left-spell right-spell])))
 
-(defn reify-option [world spell [key option]]
-  (prn 'reify-option key option spell)
-  ; FIXME ((:default option) world spell) is returning nil
-  (prn ((:default option) world spell))
-  [key ((:default option) world spell)])
-
-(defn- reify-spell
-  [world caster spell]
-  (let [spell (assoc spell :caster caster)
-        options (:options spell)
-        config (->> options
-                    (map (partial reify-option world spell))
-                    (into {}))]
-    ; we don't have (:target spell) anymore, so the reifier needs to find it in :options instead
-    (println "reify-spell" caster spell)
-    (println "reify-spell-config" config)
-    (merge spell config)))
-
 (defn- prepare-spells
-  "Prepare a player's spells for casting. Takes a player with gestures ready, returns a player with spells buffered.
+  "Prepare a player's spells for casting. Takes a player with gestures ready, returns a world with those spells added to the cast buffer.
   Note that the gestures are in LIFO order, i.e. reversed from how they appear in the spellbook.
   This is really quick and dirty and needs to be replaced for the final version."
   [world player]
-  (let [spells (map (partial reify-spell world (:name player)) (which-spells player))
+  (let [spells (which-spells player)
         world' (update world :casting concat spells)]
-    (println "prepare spells" spells)
     world'))
-  ; (update world :casting conj (which-spells player)))
 
 (defphase select-spells
   (reply BEGIN [world]
@@ -125,7 +105,9 @@
   (reply END [world]
     ; questions have all been answered, so fill the spell buffers based on that
     ; and clear the question buffers.
-    (game/reduce-players world prepare-spells))
+    (-> world
+        (game/reduce-players prepare-spells)
+        (update :casting #(sort-by :priority %))))
     ; (let [world' (game/reduce-players world prepare-spells)]
     ;   (pprint (dissoc world' :log))
     ;   world'))
@@ -141,7 +123,7 @@
     ; Similarly, there is no separate spell configuration step, so we skip configure-spells
     ; and proceed directly to execute-spells.
     (when (game/all-players? world :ready)
-      :execute-spells))
+      :configure-spells))
 
   ; event handlers for Q&A go here
 

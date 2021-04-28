@@ -22,6 +22,7 @@
   (reply END [world] world)
   (reply NEXT [world]
     (let [living-players (game/filter-players world living?)]
+      (println "End of cleanup, living players:" (map :name living-players))
       (if (> (count living-players) 1)
         :collect-gestures
         :postgame)))

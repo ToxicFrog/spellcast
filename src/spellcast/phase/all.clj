@@ -18,6 +18,7 @@
   (:require [spellcast.phase.pregame]
             [spellcast.phase.collect-gestures]
             [spellcast.phase.select-spells]
+            [spellcast.phase.configure-spells]
             [spellcast.phase.execute-spells]
             [spellcast.phase.cleanup]
             [spellcast.phase.postgame]))

@@ -23,6 +23,12 @@
         (handler' $)
         ($ :session session)))
 
+(defn gestures [session left right]
+  (-> session
+      (post "/game/gesture" {:gesture left :hand :left})
+      (post "/game/gesture" {:gesture right :hand :right})
+      (post "/game/ready" true)))
+
 (deftest integration-test
   (init)
   (let
@@ -31,12 +37,12 @@
      blu (post {} "/join" nil :params {:name "Blue" :pronouns "they"})
      ; we should now be in game
      blu (post blu "/game/log" {:text "boop boop boop"})
-     blu (post blu "/game/gesture" {:gesture :palm :hand :left})
-     blu (post blu "/game/gesture" {:gesture :palm :hand :right})
-     red (post red "/game/gesture" {:gesture :palm :hand :left})
-     red (post red "/game/gesture" {:gesture :knife :hand :right})
-     blu (post blu "/game/ready" true)
-     red (post red "/game/ready" true)
+     ; blue casts shield, red casts stab and missile
+     blu (gestures blu :palm :snap)
+     red (gestures red :knife :digit)
+     ; blue surrenders
+     blu (gestures blu :palm :palm)
+     red (gestures red :clap :clap)
      ; and now we should be in postgame
      red (get red "/data/log/0")
      ]
