@@ -34,8 +34,7 @@
     (:target self) "The Counter-Spell on you is subsumed by the Dispel Magic."
     :else "The Counter-Spell on {{target}} is subsumed by the Dispel Magic."))
 
-(defn completed [world self]
+(defn finalize [world self]
   (log world self
     (:target self) "Your magical senses go numb as a Counter-Spell surrounds you."
     :else "A Counter-Spell flares around {{target}}."))
-

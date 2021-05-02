@@ -38,5 +38,5 @@
     caster "Oh, dear. You appear to have surrendered."
     :else "{{caster}} makes the gesture of surrender!"))
 
-(defn completed [world spell]
+(defn finalize [world spell]
   (game/pset world (:caster spell) :hp 0))

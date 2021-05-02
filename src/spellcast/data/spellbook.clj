@@ -34,14 +34,14 @@
 
 (defn spell :- [(s/one SpellPage "spell")]
   "Create a spell. Should only be called inside (defspellbook) -- otherwise important parts of the spell will be missing."
-  [name gestures options invoke resolve]
+  [name gestures options invoke finalize]
   ; We wrap it in [] because it's going to be mapcatted by defspellbook and
   ; maps are, themselves, seqable.
   [{:name name
    :gestures gestures
    :options options
    :invoke invoke
-   :resolve resolve}])
+   :finalize finalize}])
 
 (defn- ns-get
   ([ns key] (ns-get ns key nil))
@@ -70,12 +70,13 @@
 
 (defn default-invoke
   "Default invokation function for spells. Logs a message of the form '<player> casts <spell> (with the <hand>) at <target>'."
-  [world :- Game, {:keys [caster hand target] :as spell} :- Spell]
+  [world :- Game, {:keys [caster hand target] :as spell} :- Spell] :- Game
   (let [caster-obj (game/get-player world caster)
         params (assoc spell
                  :hand (handedness hand)
                  :at-target (at-target target)
                  :caster-obj caster-obj)]
+    (info "In default-invoke function for" (:name spell))
     (cond
       (= caster target)
       (log world params
@@ -108,4 +109,4 @@
       :options (ns-get spell-ns 'options)
       :interactions (ns-get spell-ns 'interactions)
       :invoke (ns-get spell-ns 'invoke default-invoke)
-      :resolve (ns-get spell-ns 'resolve))))
+      :finalize (ns-get spell-ns 'finalize))))

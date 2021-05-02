@@ -27,7 +27,7 @@
   [(update self :n #(inc (or % 1)))])
 
 (defn- log-opts [{:keys [n] :as self}]
-  (if (> n 1)
+  (if (> (or n 1) 1)
     (assoc self
       :missile "Missiles"
       :shatters "shatter"
@@ -41,9 +41,16 @@
       :dispelled "is dispelled"
       :countered "is destroyed")))
 
-(defn completed [world {:keys [target] :as self}]
-  (-> world
-      (log (log-opts self)
-        target "The {{missile}} {{strikes}} you."
-        :else "The {{missile}} {{strikes}} {{target}}.")
-      (game/pupdate target :hp dec)))
+(defn finalize [world {:keys [target] :as self}]
+  (cond
+    (:countered self)
+    (-> world
+        (log (log-opts self)
+          target "The {{missile}} targeting you {{dispelled}}."
+          :else "The {{missile}} targeting {{target}} {{dispelled}}."))
+    :else
+    (-> world
+        (log (log-opts self)
+          target "The {{missile}} {{strikes}} you."
+          :else "The {{missile}} {{strikes}} {{target}}.")
+        (game/pupdate target :hp dec))))

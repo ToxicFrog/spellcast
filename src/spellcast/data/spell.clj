@@ -25,7 +25,7 @@
     [self'] -- modify self, drop other from the cast buffer
     [self' & rest] -- modify self, insert rest into the cast buffer
   In particular, this can be used to delete the spells interacted with (but not self!), or insert new spells; for example, summon elemental can delete all other elemental summoning spells from the buffer and optionally update itself to be a no-op (if it cancelled rather than merging), while magic mirror can hack the target of any affected spell.
-  The output of the interaction pass is a new spell execution queue with spells deleted, added, and/or modified; this is then consumed and the :resolve handler for each spell is called. In many cases the actual resolution was handled during the interaction pass, so the :resolve handler just displays flavour text.
+  The output of the interaction pass is a new spell execution queue with spells deleted, added, and/or modified; this is then consumed and the :finalize handler for each spell is called. In many cases the actual resolution was handled during the interaction pass, so the :finalize handler just displays flavour text.
   ")
 
 (def SpellTarget
@@ -93,13 +93,14 @@
    ; parameters filled in.
    ; Called when spellcasting begins. Typically just outputs a "{{caster}} casts
    ; {{spell}}" message. Kept separate from the resolution function so that metamagic
-   ; spells can modify one without touching the other.
+   ; spells can modify one without touching the other. This is called after spell
+   ; selection but before interactions run.
    :invoke (s/=> Game, Game s/Any)
-   ; Called when spellcasting completes, typically immediately after :invoke. This
+   ; Called when spellcasting completes, after interactions are resolved. This
    ; should perform the actual effects of the spell, but metamagic might replace
    ; it with e.g. "the spell is captured by the Delayed Effect" or "the missile
    ; shatters on the shield" or the like.
-   :resolve (s/=> Game, Game s/Any)
+   :finalize (s/=> Game, Game s/Any)
    })
 
 (defschema Spell
@@ -112,14 +113,6 @@
         (s/optional-key :options) {s/Keyword SpellOption}
         ; configuration data, could be anything
         s/Keyword s/Any)))
-
-; (defn invoke [world :- Game, spell :- Spell]
-;   (let [invoke-fn (:invoke spell)]
-;     (invoke-fn spell world)))
-
-(defn resolve [world :- Game, spell :- Spell]
-  (let [resolve-fn (:resolve spell)]
-    (resolve-fn spell world)))
 
 (defn- spell-id []
   (->> (ns-name *ns*)
@@ -150,20 +143,24 @@
   "Check if spell *self* should interact with spell *other*, based on id and pred."
   [self other id pred]
   (and
-    (or (= id :all) (= id (:id other)))
+    (or (= id :any) (= id (:id other)))
     (pred self other)))
 
 (defmacro interact
   "Define a spell/spell interaction.
   Other-spell-id should be the spell id to interact with, or :all to interact with all other spells.
   pred should be a predicate on [self other] that allows for further filtering, such as same-target?.
-  Given arguments [self other] (where *self* is the interacting spell and *other* is the spell being interacted with, it should return either nil (meaning that neither self nor other should be affected by the interaction), or [self' & others], where self' is the updated value of self and others are the (possibly empty) set of spells that should be queued instead of other."
+  Given arguments [self other] (where *self* is the interacting spell and *other* is the spell being interacted with, it should return either nil (meaning that neither self nor other should be affected by the interaction), or [self' & others], where self' is the updated value of self and others are the (possibly empty) vec of spells that should be queued instead of other."
   [other-spell-id pred [self other :as args] & body]
   (let [spell-id (spell-id)]
     `(def ~'interactions
        (conj ~'interactions
          (fn ~args
-           (when (~should-interact? ~self ~other)
+           (info "Checking for interaction between" ~spell-id "and" (:id ~other))
+           (info "Interaction key:" ~other-spell-id)
+           (info "Interaction pred:" ~pred)
+           (when (~should-interact? ~self ~other ~other-spell-id ~pred)
+             (info "Interacting" ~spell-id "with" ~other-spell-id)
              ~@body))))))
 
 (defn spell? [self other]

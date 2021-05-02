@@ -130,7 +130,7 @@
     (assoc-in world [:players name keys] val)))
 
 (defn pupdate :- Game
-  [world :- Game, name :- s/Str, keys :- s/Any, f :- s/Any, &rest]
+  [world :- Game, name :- s/Str, keys :- s/Any, f :- s/Any, & rest]
   (if (sequential? keys)
     (apply update-in world (concat [:players name] keys) f rest)
     (apply update-in world [:players name keys] f rest)))
