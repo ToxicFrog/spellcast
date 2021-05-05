@@ -14,7 +14,8 @@
     ))
 
 (spell "Missile"
-  :type :spell)
+  :type :spell
+  :priority 50)
 
 (option :target
   "Who do you want to cast Missile on?"
@@ -46,8 +47,8 @@
     (:countered self)
     (-> world
         (log (log-opts self)
-          target "The {{missile}} targeting you {{dispelled}}."
-          :else "The {{missile}} targeting {{target}} {{dispelled}}."))
+          target "The {{missile}} targeting you {{countered}}."
+          :else "The {{missile}} targeting {{target}} {{countered}}."))
     :else
     (-> world
         (log (log-opts self)

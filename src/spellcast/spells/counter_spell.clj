@@ -19,12 +19,18 @@
     ))
 
 (spell "Counter-Spell"
-  :type :spell)
+  :type :spell
+  :priority 0)
 
 (option :target "Who do you want to cast Counter-Spell on?"
   :domain (domain/also domain/living :nothing) :prefer domain/self)
 
-; Interacts with any other spell, but not with non-spells like stab, surrender, etc.
+; Deflects knife in the same manner as Shield
+(interact :knife same-target?
+  [self other]
+  [self (assoc other :shielded true)])
+
+; Counters everything else
 (interact :any (all-of spell? same-target?)
   [self other]
   [self (assoc other :countered true)])

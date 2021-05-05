@@ -41,7 +41,7 @@
   "Returns true if the spell matches the given gesture history."
   [history spell]
   (let [recipe (-> spell :gestures reverse)]
-    (println "Checking for spell match between"
+    (trace "Checking for spell match between"
       (:name spell) recipe "and" history)
     (and
       ; gesture history needs to be at least as long as spell recipe
@@ -60,7 +60,7 @@
   [player hand]
   (let [history (one-hand-history player hand)
         spell (first (filter (partial spell-matches? history) basic))]
-    (println "which spell?" (:name player) hand spell)
+    (trace "which spell?" (:name player) hand spell)
     (cond
       (nil? spell) nil
       (two-handed? spell) (assoc spell :hand :both :caster (:name player))

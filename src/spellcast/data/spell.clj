@@ -152,7 +152,8 @@
   pred should be a predicate on [self other] that allows for further filtering, such as same-target?.
   Given arguments [self other] (where *self* is the interacting spell and *other* is the spell being interacted with, it should return either nil (meaning that neither self nor other should be affected by the interaction), or [self' & others], where self' is the updated value of self and others are the (possibly empty) vec of spells that should be queued instead of other."
   [other-spell-id pred [self other :as args] & body]
-  (let [spell-id (spell-id)]
+  (let [spell-id (spell-id)
+        other-spell-id (if (keyword? other-spell-id) other-spell-id `#{~other-spell-id})]
     `(def ~'interactions
        (conj ~'interactions
          (fn ~args

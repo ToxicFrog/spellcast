@@ -85,13 +85,13 @@ Ok so let's break down spell interaction in more detail
 ;         (invoke spell)
 ;         (finalize spell))))
 
-(defn invoke-spell [world :- Game, spell :- Spell]
-  (info "Invoking " (:name spell))
+(defn invoke-spell [world :- Game, spell :- Spell] :- Game
+  (trace "Invoking " spell)
   (let [invoke-fn (:invoke spell)]
     (invoke-fn world spell)))
 
-(defn finalize-spell [world :- Game, spell :- Spell]
-  (info "Resolving " (:name spell))
+(defn finalize-spell [world :- Game, spell :- Spell] :- Game
+  (trace "Finalizing " spell world)
   (let [finalize-fn (:finalize spell)]
     (finalize-fn world spell)))
 
@@ -112,8 +112,8 @@ Ok so let's break down spell interaction in more detail
     ;      (drop-while (comp not-empty :casting))
     ;      first))
   (reply END [world]
-    (pprint world)
-    world)
+    ; (pprint world)
+    (assoc world :casting []))
   (reply INFO [world]
     {:when-ready "Processing..."
      :when-unready "Processing..."})

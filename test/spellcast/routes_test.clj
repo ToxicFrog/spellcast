@@ -37,7 +37,10 @@
      blu (post {} "/join" nil :params {:name "Blue" :pronouns "they"})
      ; we should now be in game
      blu (post blu "/game/log" {:text "boop boop boop"})
-     ; blue casts shield, red casts stab and missile
+     ; blue casts counterspell and shield, red casts stab and missile
+     ; the shield should be countered, but it doesn't matter because counterspell
+     ; has a built in shield effect
+     ; the stab should "slide off" and the missile be "countered"
      blu (gestures blu :palm :snap)
      red (gestures red :knife :digit)
      ; blue surrenders
