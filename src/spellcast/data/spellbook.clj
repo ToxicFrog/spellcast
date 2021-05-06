@@ -68,9 +68,9 @@
   ; this may change once monsters are introduced, etc
   (string? target))
 
-(defn default-invoke
+(defn default-invoke :- Game
   "Default invokation function for spells. Logs a message of the form '<player> casts <spell> (with the <hand>) at <target>'."
-  [world :- Game, {:keys [caster hand target] :as spell} :- Spell] :- Game
+  [world :- Game, {:keys [caster hand target] :as spell} :- Spell]
   (let [caster-obj (game/get-player world caster)
         params (assoc spell
                  :hand (handedness hand)

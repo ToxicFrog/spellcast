@@ -48,9 +48,9 @@
 (defn phase-info [world]
   (dispatch-event world (world :phase) :INFO))
 
-(defn post-log
+(defn post-log :- Game
   "Add a chat message from the given player."
-  [world :- Game, player :- s/Str, {:keys [text]} :- {:text s/Str}] :- EventResult
+  [world :- Game, player :- s/Str, {:keys [text]} :- {:text s/Str}]
    (as-> world $
          (log $ {:name player :text text}
            player "You say, \"{{text}}\""

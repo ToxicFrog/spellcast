@@ -74,23 +74,14 @@ Ok so let's break down spell interaction in more detail
           (conj done head)))
       done)))
 
-; (defn- execute-next-spell
-;   "Pop the first spell from the execution queue and cast it by calling its :invoke and :finalize handlers. Returns the new world state that results."
-;   [world]
-;   (let [queue (:casting world)
-;         {:keys [invoke finalize] :as spell} (first queue)
-;         world (assoc world :casting (rest queue))]
-;     (info "Executing spell: " (:name spell))
-;     (-> world
-;         (invoke spell)
-;         (finalize spell))))
-
-(defn invoke-spell [world :- Game, spell :- Spell] :- Game
+(defn invoke-spell :- Game
+  [world :- Game, spell :- Spell]
   (trace "Invoking " spell)
   (let [invoke-fn (:invoke spell)]
     (invoke-fn world spell)))
 
-(defn finalize-spell [world :- Game, spell :- Spell] :- Game
+(defn finalize-spell :- Game
+  [world :- Game, spell :- Spell]
   (trace "Finalizing " spell world)
   (let [finalize-fn (:finalize spell)]
     (finalize-fn world spell)))

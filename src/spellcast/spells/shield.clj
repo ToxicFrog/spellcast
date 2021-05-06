@@ -45,7 +45,8 @@
 
 ; Finalize does nothing because all the important parts happened during spell
 ; interactions.
-(defn finalize [world :- game/Game, self :- Spell] :- game/Game
+(defn finalize :- game/Game
+  [world :- game/Game, self :- Spell]
   (cond
     (:dispelled self) (dispelled world self)
     (:countered self) (countered world self)

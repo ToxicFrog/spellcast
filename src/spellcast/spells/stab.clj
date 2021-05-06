@@ -38,7 +38,8 @@
       :strikes "strikes"
       :blocked "slides off")))
 
-(defn finalize [world :- game/Game, {:keys [target] :as self} :- Spell] :- game/Game
+(defn finalize :- Game
+  [world :- Game, {:keys [target] :as self} :- Spell]
   (cond
     (:shielded self)
     (-> world
