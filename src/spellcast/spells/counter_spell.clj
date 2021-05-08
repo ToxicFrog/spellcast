@@ -10,7 +10,7 @@
              :refer [trace debug info warn error fatal
                      tracef debugf infof warnf errorf fatalf]])
   (:require
-    [spellcast.data.domain :as domain]
+    [spellcast.data.selector :as select]
     [spellcast.data.spell :refer :all]
     ; [spellcast.data.game :as game]
     ; [spellcast.data.spellbook :refer [defspellbook spell option]]
@@ -23,7 +23,8 @@
   :priority 0)
 
 (option :target "Who do you want to cast Counter-Spell on?"
-  :domain (domain/also domain/living :nothing) :prefer domain/self)
+  :domain (select/also select/living :nothing)
+  :prefer select/self)
 
 ; Deflects knife in the same manner as Shield
 (interact :knife same-target?
