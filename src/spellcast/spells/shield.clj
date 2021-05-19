@@ -7,6 +7,7 @@
              :refer [trace debug info warn error fatal
                      tracef debugf infof warnf errorf fatalf]])
   (:require
+    [spellcast.data.game :as game]
     [spellcast.data.selector :as select]
     [spellcast.data.spell :refer :all]
     [spellcast.logging :refer [log]]

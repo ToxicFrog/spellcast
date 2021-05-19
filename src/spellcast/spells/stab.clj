@@ -7,10 +7,10 @@
              :refer [trace debug info warn error fatal
                      tracef debugf infof warnf errorf fatalf]])
   (:require
-    [spellcast.data.selector :refer [living enemy]]
     [spellcast.data.game :as game]
-    [spellcast.logging :refer [log]]
+    [spellcast.data.selector :refer [living enemy]]
     [spellcast.data.spell :refer :all]
+    [spellcast.logging :refer [log]]
     ))
 
 (spell "Stab"
@@ -38,9 +38,23 @@
       :strikes "strikes"
       :blocked "slides off")))
 
-(defn finalize :- Game
-  [world :- Game, {:keys [target] :as self} :- Spell]
+(defn invoke :- Game
+  [world :- Game, {:keys [caster hand target] :as spell} :- Spell]
   (cond
+    (= :nothing target)
+    (log world (assoc spell :hand (name hand))
+      caster "You stab at the air with the knife in your {{hand}} hand, ineffectually."
+      :else "{{caster}} waves the knife in {{their caster}} {{hand}} hand aimlessly.")
+    :else
+    (log world (assoc spell :hand (name hand))
+      caster "You stab at {{target}} (with the {{hand}} hand)."
+      target "{{caster}} stabs at you (with the {{hand}} hand)."
+      :else "{{caster}} stabs at {{target}} (with the {{hand}} hand).")))
+
+(defn finalize :- Game
+  [world :- Game, {:keys [target caster] :as self} :- Spell]
+  (cond
+    (= :nothing target) world
     (:shielded self)
     (-> world
         (log (log-opts self)
