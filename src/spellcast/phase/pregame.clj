@@ -13,13 +13,13 @@
 
 (defn- enter-arena [world player]
   (log world {:player player}
-    (player :name) "You advance confidently into the arena. The referee casts the formal Dispel Magic and Anti-Spell on you..."
-    :else "{{name player}} strides defiantly into the arena. The referee casts the formal Dispel Magic and Anti-Spell on {{pronoun player :obj}}..."))
+    player "You advance confidently into the arena. The referee casts the formal Dispel Magic and Anti-Spell on you..."
+    :else "{{player}} strides defiantly into the arena. The referee casts the formal Dispel Magic and Anti-Spell on {{them player}}..."))
 
 (defphase :pregame
   (reply BEGIN [world] world)
   (reply END [world]
-    (let [players (-> world :players vals)]
+    (let [players (-> world :players keys)]
       (reduce enter-arena world players)))
   (reply INFO [world]
     (let [label (str "Waiting for players ("

@@ -71,17 +71,15 @@
 (defn default-invoke :- Game
   "Default invokation function for spells. Logs a message of the form '<player> casts <spell> (with the <hand>) at <target>'."
   [world :- Game, {:keys [caster hand target] :as spell} :- Spell]
-  (let [caster-obj (game/get-player world caster)
-        params (assoc spell
+  (let [params (assoc spell
                  :hand (handedness hand)
-                 :at-target (at-target target)
-                 :caster-obj caster-obj)]
+                 :at-target (at-target target))]
     (info "In default-invoke function for" (:name spell))
     (cond
       (= caster target)
       (log world params
         caster "You cast {{name}} (with {{hand}}) at yourself."
-        :else "{{caster}} casts {{name}} (with {{hand}}) at {{pronoun caster-obj :ref}}.")
+        :else "{{caster}} casts {{name}} (with {{hand}}) at {{themself caster}}.")
       ; HACK HACK HACK -- one wizard casting at another
       ; in future this needs to properly handle casting at monsters, etc.
       (player? target)
@@ -90,11 +88,11 @@
         target "{{caster}} casts {{name}} (with {{hand}}) at you."
         :else "{{caster}} casts {{name}} (with {{hand}} {{at-target}}.")
       ; casting into the air/over the arena
-      ; only difference is that we don't lot a message for 'target' since it's not a player
+      ; only difference is that we don't log a message for 'target' since it's not a player
       (keyword? target)
       (log world params
         caster "You cast {{name}} (with {{hand}}) {{at-target}}."
-        :else "{{caster}} casts {{name}} (with {{hand}} {{at-target}}.")
+        :else "{{caster}} casts {{name}} (with {{hand}}) {{at-target}}.")
       :else
       (log world params
         :all "Something went horribly wrong.")
