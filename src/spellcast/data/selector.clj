@@ -7,10 +7,13 @@
              :refer [trace debug info warn error fatal
                      tracef debugf infof warnf errorf fatalf]])
   (:require
-    ; we don't need any other requires, but we need the (:require) for the
-    ; boilerplate inserter
     [schema.core]
+    [spellcast.data.game :refer [Game]]
+    [spellcast.data.spell :refer [Spell]]
     ))
+
+(defschema Target
+  (s/cond-pre s/Keyword s/Str))
 
 ; TODO: investigate how to handle stuff like blindness and invisibility -- a
 ; blind wizard can't target anything except themself, and an invisible wizard
@@ -18,13 +21,18 @@
 ; check the caster and exclude all invisible wizards who aren't the caster, and
 ; if the caster is blind, include only the caster.
 
-(defn living
+(defn wizards :- #{Target}
   "A selector that returns all living beings in the world. At the moment this means all wizards with hp>0. TODO: include minions, elementals, and whatnot."
-  [world spell]
-  (->> world
-       :players
-       (filter (fn [[k v]] (> (:hp v) 0)))
-       (map first)))
+  [world :- Game, spell :- Spell]
+  (as-> world $
+       (:players $)
+       (filter (fn [[k v]] (> (:hp v) 0)) $)
+       (map first $)
+       (set $)
+       (conj $ :nothing)))
+
+; TODO once monsters and stuff exist, expand this to cover them
+(def living wizards)
 
 ; We should probably make including :nothing the default, since most spells are nothing-targetable. Exceptions below.
 ; Wizard only: Dispel Magic, Summon Elemental
@@ -32,20 +40,20 @@
 ; No targeting: Surrender, Firestorm, Icestorm
 ; Special: Raise Dead
 
-(defn also
-  "A selector that adds &rest to whatever targets f returns, so you can e.g. do (also living :nothing) for a spell that has 'up into the air' as a valid target."
-  [f & rest]
-  (fn [world spell]
-    (concat (f world spell) rest)))
+(defn requires-target :- #{Target}
+  "A selector that removes :nothing from the set of targets returned by the selector it wraps. Used for spells that require a valid target, which, in the Bartle spellbook, is Dispel Magic, Delayed Effect, Antispell, Permanency, all Summons, and Raise Dead."
+  [f]
+  (fn [world :- Game, spell :- Spell]
+    (disj (f world spell) :nothing)))
 
-(defn self
+(defn self :- #{Target}
   "A selector that returns the caster of the spell."
-  [world spell]
-  [(:caster spell)])
+  [world :- Game, spell :- Spell]
+  #{(:caster spell)})
 
-(defn enemy
-  "A selector that returns all enemies of the caster. At the moment this is everyone except the caster. TODO: exclude the caster's minions, too, and prioritize the most threatening wizard."
-  [spell world]
+(defn enemy :- #{Target}
+  "A selector that returns all enemies of the caster. At the moment this is everyone except the caster. TODO: exclude the caster's minions, too."
+  [world :- Game, spell :- Spell]
   (-> (living spell world)
       set
       (disj (:caster spell))))

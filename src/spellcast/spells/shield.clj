@@ -7,12 +7,9 @@
              :refer [trace debug info warn error fatal
                      tracef debugf infof warnf errorf fatalf]])
   (:require
-    [spellcast.data.selector :as domain]
+    [spellcast.data.selector :as select]
     [spellcast.data.spell :refer :all]
-    [spellcast.data.game :as game]
-    ; [spellcast.data.spellbook :refer [defspellbook spell option]]
     [spellcast.logging :refer [log]]
-    ; [spellcast.spellbook.common :refer [default-invoke]]
     ))
 
 (spell "Shield"
@@ -20,8 +17,8 @@
   :priority 10)
 
 (option :target "Who do you want to cast Shield on?"
-  :domain (domain/also domain/living :nothing)
-  :prefer domain/self)
+  :domain select/living
+  :prefer select/self)
 
 ; Interacts with any other spell, but not with non-spells like stab, surrender, etc.
 (interact #{:knife :missile} same-target?
